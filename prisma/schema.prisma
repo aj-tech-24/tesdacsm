@@ -1,0 +1,77 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  password  String
+  office    String   // "PO" | "CCNTS" | "PTC"
+  role      String   @default("office_admin") // "super_admin" | "office_admin"
+  createdAt DateTime @default(now())
+}
+
+model Feedback {
+  id                     Int      @id @default(autoincrement())
+  createdAt              DateTime @default(now())
+  controlNumber          String
+  name                   String?
+  clientType             String?
+  age                    String?
+  sex                    String?
+  formDate               String?
+  email                  String?
+  employeeName           String?
+  regionOfResidence      String?
+  province               String?
+  municipality           String?
+  office                 String?
+  citizensCharterService String?
+  serviceCategory        String?
+  transactionTypes       String?  // comma-separated
+  
+  cc1                    String?
+  cc2                    String?
+  cc3                    String?
+  
+  sqd0                   String?
+  sqd1                   String?
+  sqd2                   String?
+  sqd3                   String?
+  sqd4                   String?
+  sqd5                   String?
+  sqd6                   String?
+  sqd7                   String?
+  sqd8                   String?
+  
+  suggestions            String?
+  actionProvided         String?
+  dateResolved           String?
+}
+
+model Analysis {
+  id        Int      @id @default(autoincrement())
+  content   String
+  updatedAt DateTime @updatedAt
+}
+
+model ReportMetadata {
+  id                  Int      @id @default(autoincrement())
+  reportPeriod        String   @default("")
+  regionExecutive     String?
+  provinceDistrict    String?
+  operatingUnit       String?
+  headOfUnit          String?
+  designation         String?
+  cusatFocal          String?
+  updatedAt           DateTime @updatedAt
+}
