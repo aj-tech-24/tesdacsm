@@ -11,21 +11,9 @@ export const metadata: Metadata = {
   description: 'TESDA Client Satisfaction Measurement Form - Help us serve you better',
   generator: 'v0.app',
   icons: {
-    icon: [
-      {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
-      },
-    ],
-    apple: '/apple-icon.png',
+    icon: '/tesda-logo.png',
+    shortcut: '/tesda-logo.png',
+    apple: '/tesda-logo.png',
   },
 }
 
