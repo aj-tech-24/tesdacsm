@@ -1,15 +1,24 @@
 const { PrismaClient } = require("@prisma/client");
 const { createClient } = require("@libsql/client");
-const { PrismaLibSql } = require("@prisma/adapter-libsql");
+const { PrismaLibSQL } = require("@prisma/adapter-libsql");
 const bcrypt = require("bcryptjs");
 require("dotenv").config({ path: ".env" });
 
+const dbUrl = process.env.TURSO_DATABASE_URL || process.env.DATABASE_URL;
+if (!dbUrl) {
+    throw new Error("Missing TURSO_DATABASE_URL or DATABASE_URL in environment variables.");
+}
+
+if (!process.env.TURSO_AUTH_TOKEN && dbUrl.startsWith("libsql://")) {
+    throw new Error("Missing TURSO_AUTH_TOKEN for libsql:// database URL.");
+}
+
 const libsql = createClient({
-    url: "libsql://tesda-csm-aj-tech-24.aws-ap-northeast-1.turso.io",
-    authToken: "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NzQ4NTc4MTAsImlkIjoiMDE5ZDNkYzQtNGIwMS03NzBiLWFiMmItZDg4YzMwOWU4YTVlIiwicmlkIjoiZWFlOTVmNGEtYjA1Yy00MGFjLThiMzQtMTE5OGIzNWVmMWY3In0.-fuCsSqvgH8zwvUSPlaj6V0-sT_i_s8hGD7sYQxN3O9kAqd15jJw2MEdXTHSdMbQz17Qh44huA1IJhiCX53IBg",
+    url: dbUrl,
+    authToken: process.env.TURSO_AUTH_TOKEN,
 });
 
-const adapter = new PrismaLibSql(libsql);
+const adapter = new PrismaLibSQL(libsql);
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
