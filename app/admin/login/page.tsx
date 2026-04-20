@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -12,7 +11,6 @@ export default function AdminLogin() {
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [isLoading, setIsLoading] = useState(false);
-    const router = useRouter();
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -27,8 +25,7 @@ export default function AdminLogin() {
             });
 
             if (response.ok) {
-                router.push("/admin/dashboard");
-                router.refresh();
+                window.location.replace("/admin/dashboard");
             } else {
                 const data = await response.json();
                 setError(data.error || "Invalid password");
