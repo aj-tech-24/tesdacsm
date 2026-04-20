@@ -5,6 +5,6 @@ export async function POST(req: NextRequest) {
     const cookieStore = await cookies();
     cookieStore.delete("session");
     const url = req.nextUrl.clone();
-    url.pathname = "/admin/login";
-    return NextResponse.redirect(url);
+    url.pathname = "/";
+    return NextResponse.redirect(url, 303);
 }
