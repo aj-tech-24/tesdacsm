@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ListTodo } from "lucide-react";
+import { ListTodo, Loader2, Pencil, Save } from "lucide-react";
 import { toast } from "sonner";
 
 const OTHERS_ACTION = "Others:";
@@ -21,6 +21,13 @@ const PREDEFINED_ACTIONS = [
     OTHERS_ACTION
 ];
 
+const inferNatureOfTransaction = (feedback: any) => {
+    const raw = String(feedback?.citizensCharterService || "").toLowerCase();
+    if (raw.includes("complaint")) return "Complaint";
+    if (raw.includes("inquiry")) return "Inquiry";
+    return "";
+};
+
 function ActionRow({
     f,
     submittingId,
@@ -28,7 +35,7 @@ function ActionRow({
 }: {
     f: any,
     submittingId: number | null,
-    updateAction: (id: number, act: string, dateResolved: string) => void
+    updateAction: (id: number, act: string, dateResolved: string, natureOfTransaction: string) => Promise<boolean>
 }) {
     const initialAction = (f.actionProvided || "").trim();
     const isPredefined = PREDEFINED_ACTIONS.includes(initialAction);
@@ -43,8 +50,15 @@ function ActionRow({
             : (isPredefined ? "" : initialAction)
     );
     const [dateResolved, setDateResolved] = useState((f.dateResolved || "").slice(0, 10));
+    const [natureOfTransaction, setNatureOfTransaction] = useState(
+        String(f.natureOfTransaction || inferNatureOfTransaction(f) || "")
+    );
+    const [isDone, setIsDone] = useState(
+        Boolean(f.actionProvided && (f.natureOfTransaction || inferNatureOfTransaction(f)))
+    );
+    const [isEditing, setIsEditing] = useState(!Boolean(f.actionProvided && (f.natureOfTransaction || inferNatureOfTransaction(f))));
 
-    const handleSave = () => {
+    const handleSave = async () => {
         const actionToSave = localAction === OTHERS_ACTION
             ? `${OTHERS_ACTION} ${otherAction.trim()}`.trim()
             : localAction;
@@ -59,7 +73,16 @@ function ActionRow({
             return;
         }
 
-        updateAction(f.id, actionToSave, dateResolved);
+        if (!natureOfTransaction) {
+            toast.error("Please select the nature of transaction");
+            return;
+        }
+
+        const isSaved = await updateAction(f.id, actionToSave, dateResolved, natureOfTransaction);
+        if (isSaved) {
+            setIsDone(true);
+            setIsEditing(false);
+        }
     };
 
     return (
@@ -70,7 +93,18 @@ function ActionRow({
                 {f.citizensCharterService || "N/A"}
             </TableCell>
             <TableCell>
-                {localAction === OTHERS_ACTION ? (
+                <Select value={natureOfTransaction} onValueChange={setNatureOfTransaction} disabled={!isEditing || submittingId === f.id}>
+                    <SelectTrigger className="w-full min-w-[170px] shadow-none h-9 disabled:opacity-100">
+                        <SelectValue placeholder="Select nature" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="Inquiry">Inquiry</SelectItem>
+                        <SelectItem value="Complaint">Complaint</SelectItem>
+                    </SelectContent>
+                </Select>
+            </TableCell>
+            <TableCell>
+                {localAction === OTHERS_ACTION && isEditing ? (
                     <div className="flex items-center gap-2 min-w-[250px]">
                         <Input
                             value={otherAction}
@@ -83,13 +117,18 @@ function ActionRow({
                             size="sm"
                             variant="outline"
                             onClick={() => setLocalAction("")}
+                            disabled={submittingId === f.id}
                         >
                             Cancel
                         </Button>
                     </div>
+                ) : localAction === OTHERS_ACTION ? (
+                    <div className="min-w-[250px] rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+                        {`${OTHERS_ACTION} ${otherAction}`.trim()}
+                    </div>
                 ) : (
-                    <Select value={localAction} onValueChange={setLocalAction}>
-                        <SelectTrigger className="w-full min-w-[250px] shadow-none h-9">
+                    <Select value={localAction} onValueChange={setLocalAction} disabled={!isEditing || submittingId === f.id}>
+                        <SelectTrigger className="w-full min-w-[250px] shadow-none h-9 disabled:opacity-100">
                             <SelectValue placeholder="Select an action..." />
                         </SelectTrigger>
                         <SelectContent>
@@ -105,24 +144,44 @@ function ActionRow({
                     type="date"
                     value={dateResolved}
                     onChange={(e) => setDateResolved(e.target.value)}
-                    className="h-9 min-w-[160px]"
+                    disabled={!isEditing || submittingId === f.id}
+                    className="h-9 min-w-[160px] disabled:opacity-100"
                 />
             </TableCell>
             <TableCell className="text-right">
-                <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={handleSave}
-                    disabled={submittingId === f.id}
-                >
-                    {submittingId === f.id ? "..." : "Save"}
-                </Button>
+                {isEditing ? (
+                    <Button
+                        size="icon"
+                        className="h-9 w-9 bg-blue-600 text-white hover:bg-blue-700"
+                        onClick={handleSave}
+                        disabled={submittingId === f.id}
+                        title="Save"
+                    >
+                        {submittingId === f.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    </Button>
+                ) : (
+                    <Button
+                        size="icon"
+                        variant="outline"
+                        className="h-9 w-9 border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
+                        onClick={() => setIsEditing(true)}
+                        title={isDone ? "Edit saved transaction" : "Edit"}
+                    >
+                        <Pencil className="h-4 w-4" />
+                    </Button>
+                )}
             </TableCell>
         </TableRow>
     );
 }
 
-export default function ActionManager({ feedbackList }: { feedbackList: any[] }) {
+export default function ActionManager({
+    feedbackList,
+    onFeedbackUpdated,
+}: {
+    feedbackList: any[];
+    onFeedbackUpdated?: (id: number, patch: Record<string, string>) => void;
+}) {
     const [submittingId, setSubmittingId] = useState<number | null>(null);
     const [page, setPage] = useState(1);
 
@@ -130,41 +189,51 @@ export default function ActionManager({ feedbackList }: { feedbackList: any[] })
     const totalPages = Math.max(1, Math.ceil(feedbackList.length / pageSize));
     const paginatedList = feedbackList.slice((page - 1) * pageSize, page * pageSize);
 
-    const updateAction = async (id: number, actionPassed: string, dateResolved: string) => {
+    const updateAction = async (id: number, actionPassed: string, dateResolved: string, natureOfTransaction: string) => {
         setSubmittingId(id);
         try {
             const res = await fetch("/api/admin/action-provided", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ id, actionProvided: actionPassed, dateResolved }),
+                body: JSON.stringify({ id, actionProvided: actionPassed, dateResolved, natureOfTransaction }),
             });
             if (res.ok) {
                 toast.success("Action Provided updated!");
+                onFeedbackUpdated?.(Number(id), {
+                    actionProvided: actionPassed,
+                    dateResolved,
+                    natureOfTransaction,
+                });
+                return true;
             } else {
                 toast.error("Failed to update action");
+                return false;
             }
         } catch (err) {
             toast.error("An error occurred");
+            return false;
+        } finally {
+            setSubmittingId(null);
         }
-        setSubmittingId(null);
     };
 
     return (
-        <Card className="shadow-md border-0 ring-1 ring-slate-100 mt-8">
+        <Card className="mt-6 rounded-2xl border border-slate-200 bg-white shadow-sm">
             <CardHeader>
-                <CardTitle className="text-xl flex items-center gap-2 text-slate-800">
-                    <ListTodo className="w-6 h-6 text-indigo-600" />
+                <CardTitle className="flex items-center gap-2 text-xl tracking-tight text-slate-900">
+                    <ListTodo className="h-6 w-6 text-cyan-700" />
                     Manage Actions Provided
                 </CardTitle>
                 <CardDescription>Assign specific actions taken for each feedback entry.</CardDescription>
             </CardHeader>
             <CardContent className="overflow-x-auto">
                 <Table>
-                    <TableHeader className="bg-slate-50">
+                    <TableHeader className="bg-slate-50/80">
                         <TableRow>
                             <TableHead>Control No.</TableHead>
                             <TableHead>Client Name</TableHead>
                             <TableHead>Service Availed</TableHead>
+                            <TableHead>Nature of Transaction</TableHead>
                             <TableHead>Action Provided</TableHead>
                             <TableHead>Date Resolved</TableHead>
                             <TableHead className="w-24 text-right">Action</TableHead>
@@ -177,7 +246,7 @@ export default function ActionManager({ feedbackList }: { feedbackList: any[] })
                     </TableBody>
                 </Table>
             </CardContent>
-            <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between">
+            <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50/60 p-4">
                 <span className="text-sm text-slate-500">
                     Showing {(page - 1) * pageSize + 1} to {Math.min(page * pageSize, feedbackList.length)} of {feedbackList.length} entries
                 </span>

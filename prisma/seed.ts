@@ -4,9 +4,9 @@ const { PrismaLibSQL } = require("@prisma/adapter-libsql");
 const bcrypt = require("bcryptjs");
 require("dotenv").config({ path: ".env" });
 
-const dbUrl = process.env.TURSO_DATABASE_URL || process.env.DATABASE_URL;
+const dbUrl = process.env.TURSO_DATABASE_URL;
 if (!dbUrl) {
-    throw new Error("Missing TURSO_DATABASE_URL or DATABASE_URL in environment variables.");
+    throw new Error("Missing TURSO_DATABASE_URL in environment variables.");
 }
 
 if (!process.env.TURSO_AUTH_TOKEN && dbUrl.startsWith("libsql://")) {

@@ -30,23 +30,23 @@ export default function AnalysisForm({ initialAnalysis }: { initialAnalysis: str
     };
 
     return (
-        <Card className="shadow-md border-0 ring-1 ring-slate-100 mt-8 bg-white">
+        <Card className="mt-6 rounded-2xl border border-slate-200 bg-white shadow-sm">
             <CardHeader>
-                <CardTitle className="text-xl flex items-center gap-2 text-slate-800">
-                    <FileText className="w-6 h-6 text-slate-600" />
+                <CardTitle className="flex items-center gap-2 text-xl tracking-tight text-slate-900">
+                    <FileText className="h-6 w-6 text-cyan-700" />
                     Overall Dashboard Analysis
                 </CardTitle>
                 <CardDescription>Enter your summary and key findings based on the metrics above.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
                 <textarea
-                    className="w-full min-h-[200px] p-4 text-slate-700 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-y"
+                    className="min-h-[220px] w-full resize-y rounded-xl border border-slate-200 bg-slate-50 p-4 text-slate-700 outline-none focus:ring-2 focus:ring-slate-400"
                     placeholder="Type your overall analysis here..."
                     value={analysis}
                     onChange={(e) => setAnalysis(e.target.value)}
                 />
                 <div className="flex justify-end">
-                    <Button onClick={handleSave} disabled={isSaving} className="bg-slate-800 hover:bg-slate-700 text-white">
+                    <Button onClick={handleSave} disabled={isSaving} className="bg-slate-900 text-white hover:bg-slate-800">
                         {isSaving ? "Saving..." : <><Save className="w-4 h-4 mr-2" /> Save Analysis</>}
                     </Button>
                 </div>

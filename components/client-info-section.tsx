@@ -29,25 +29,126 @@ const clientTypes = [
   { value: "Government (Employee or another agency)", label: "Government", emoji: "🏛️" },
 ]
 
-const regionOptions = [
-  "NCR",
-  "CAR",
-  "Region I",
-  "Region II",
-  "Region III",
-  "Region IV-A",
-  "Region IV-B",
-  "Region V",
-  "Region VI",
-  "Region VII",
-  "Region VIII",
-  "Region IX",
-  "Region X",
-  "Region XI",
-  "Region XII",
-  "Region XIII",
-  "BARMM",
-]
+const locationHierarchy: Record<string, Record<string, string[]>> = {
+  NCR: {
+    "Metro Manila": ["Manila", "Quezon City", "Makati", "Taguig", "Pasig", "Caloocan"],
+  },
+  CAR: {
+    Abra: ["Bangued"],
+    Apayao: ["Kabugao"],
+    Benguet: ["La Trinidad", "Baguio City"],
+    Ifugao: ["Lagawe"],
+    Kalinga: ["Tabuk City"],
+    "Mountain Province": ["Bontoc"],
+  },
+  "Region I": {
+    "Ilocos Norte": ["Laoag City", "Batac City"],
+    "Ilocos Sur": ["Vigan City", "Candon City"],
+    "La Union": ["San Fernando City", "Agoo"],
+    Pangasinan: ["Lingayen", "Dagupan City", "Urdaneta City"],
+  },
+  "Region II": {
+    Batanes: ["Basco"],
+    Cagayan: ["Tuguegarao City", "Aparri"],
+    Isabela: ["Ilagan City", "Cauayan City"],
+    "Nueva Vizcaya": ["Bayombong", "Solano"],
+    Quirino: ["Cabarroguis"],
+  },
+  "Region III": {
+    Aurora: ["Baler"],
+    Bataan: ["Balanga City"],
+    Bulacan: ["Malolos City", "Meycauayan City"],
+    "Nueva Ecija": ["Palayan City", "Cabanatuan City"],
+    Pampanga: ["San Fernando City", "Angeles City"],
+    Tarlac: ["Tarlac City"],
+    Zambales: ["Iba", "Olongapo City"],
+  },
+  "Region IV-A": {
+    Batangas: ["Batangas City", "Lipa City", "Tanauan City"],
+    Cavite: ["Imus City", "Bacoor City", "Tagaytay City"],
+    Laguna: ["Santa Cruz", "Calamba City", "Santa Rosa City"],
+    Quezon: ["Lucena City", "Tayabas City"],
+    Rizal: ["Antipolo City", "Taytay"],
+  },
+  "Region IV-B": {
+    Marinduque: ["Boac"],
+    "Occidental Mindoro": ["Mamburao", "San Jose"],
+    "Oriental Mindoro": ["Calapan City"],
+    Palawan: ["Puerto Princesa City", "Coron"],
+    Romblon: ["Romblon"],
+  },
+  "Region V": {
+    Albay: ["Legazpi City", "Tabaco City"],
+    "Camarines Norte": ["Daet"],
+    "Camarines Sur": ["Pili", "Naga City"],
+    Catanduanes: ["Virac"],
+    Masbate: ["Masbate City"],
+    Sorsogon: ["Sorsogon City"],
+  },
+  "Region VI": {
+    Aklan: ["Kalibo"],
+    Antique: ["San Jose de Buenavista"],
+    Capiz: ["Roxas City"],
+    Guimaras: ["Jordan"],
+    Iloilo: ["Iloilo City", "Passi City"],
+    "Negros Occidental": ["Bacolod City", "Bago City"],
+  },
+  "Region VII": {
+    Bohol: ["Tagbilaran City"],
+    Cebu: ["Cebu City", "Mandaue City", "Lapu-Lapu City"],
+    "Negros Oriental": ["Dumaguete City"],
+    Siquijor: ["Siquijor"],
+  },
+  "Region VIII": {
+    Biliran: ["Naval"],
+    "Eastern Samar": ["Borongan City"],
+    Leyte: ["Tacloban City", "Ormoc City"],
+    "Northern Samar": ["Catarman"],
+    Samar: ["Catbalogan City", "Calbayog City"],
+    "Southern Leyte": ["Maasin City"],
+  },
+  "Region IX": {
+    "Zamboanga del Norte": ["Dipolog City", "Dapitan City"],
+    "Zamboanga del Sur": ["Pagadian City", "Zamboanga City"],
+    "Zamboanga Sibugay": ["Ipil"],
+  },
+  "Region X": {
+    Bukidnon: ["Malaybalay City", "Valencia City"],
+    Camiguin: ["Mambajao"],
+    "Lanao del Norte": ["Tubod", "Iligan City"],
+    "Misamis Occidental": ["Oroquieta City", "Ozamis City"],
+    "Misamis Oriental": ["Cagayan de Oro City", "Gingoog City"],
+  },
+  "Region XI": {
+    "Davao de Oro": ["Nabunturan", "Tagum City"],
+    "Davao del Norte": ["Tagum City", "Panabo City", "Samal City"],
+    "Davao del Sur": ["Digos City", "Bansalan", "Magsaysay"],
+    "Davao Occidental": ["Malita"],
+    "Davao Oriental": ["Mati City"],
+  },
+  "Region XII": {
+    Cotabato: ["Kidapawan City"],
+    Sarangani: ["Alabel"],
+    "South Cotabato": ["Koronadal City", "General Santos City"],
+    "Sultan Kudarat": ["Isulan", "Tacurong City"],
+  },
+  "Region XIII": {
+    "Agusan del Norte": ["Butuan City", "Cabadbaran City"],
+    "Agusan del Sur": ["Prosperidad", "Bayugan City"],
+    "Dinagat Islands": ["San Jose"],
+    "Surigao del Norte": ["Surigao City"],
+    "Surigao del Sur": ["Tandag City"],
+  },
+  BARMM: {
+    Basilan: ["Isabela City", "Lamitan City"],
+    "Lanao del Sur": ["Marawi City"],
+    Maguindanao: ["Buluan", "Cotabato City"],
+    Sulu: ["Jolo"],
+    TawiTawi: ["Bongao"],
+  },
+}
+
+const regionOptions = Object.keys(locationHierarchy)
 
 interface ClientInfoSectionProps {
   formData: {
@@ -97,6 +198,48 @@ export const ClientInfoSection = memo(function ClientInfoSection({ formData, onC
   const selectedRegionValue = regionOptions.includes(formData.regionOfResidence)
     ? formData.regionOfResidence
     : "__OTHER__"
+
+  const availableProvinces = useMemo(() => {
+    if (!formData.regionOfResidence || selectedRegionValue === "__OTHER__") return []
+    return Object.keys(locationHierarchy[formData.regionOfResidence] || {})
+  }, [formData.regionOfResidence, selectedRegionValue])
+
+  const selectedProvinceValue = formData.province && availableProvinces.includes(formData.province)
+    ? formData.province
+    : formData.province
+      ? "__OTHER__"
+      : ""
+
+  const availableMunicipalities = useMemo(() => {
+    if (!formData.regionOfResidence || !formData.province) return []
+    return locationHierarchy[formData.regionOfResidence]?.[formData.province] || []
+  }, [formData.regionOfResidence, formData.province])
+
+  const selectedMunicipalityValue = formData.municipality && availableMunicipalities.includes(formData.municipality)
+    ? formData.municipality
+    : formData.municipality
+      ? "__OTHER__"
+      : ""
+
+  useEffect(() => {
+    if (selectedRegionValue === "__OTHER__") return
+    if (!formData.province) return
+    if (!availableProvinces.includes(formData.province)) {
+      onChange("province", "")
+      onChange("municipality", "")
+    }
+  }, [selectedRegionValue, formData.province, availableProvinces, onChange])
+
+  useEffect(() => {
+    if (!formData.province) {
+      if (formData.municipality) onChange("municipality", "")
+      return
+    }
+    if (!formData.municipality) return
+    if (!availableMunicipalities.includes(formData.municipality) && selectedMunicipalityValue !== "__OTHER__") {
+      onChange("municipality", "")
+    }
+  }, [formData.province, formData.municipality, availableMunicipalities, selectedMunicipalityValue, onChange])
 
   return (
     <Card className="border-0 shadow-sm bg-card">
@@ -391,31 +534,110 @@ export const ClientInfoSection = memo(function ClientInfoSection({ formData, onC
           </div>
         </div>
 
-        {/* Province and Municipality for Region XI */}
+        {/* Province and Municipality */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="province" className="text-sm font-semibold text-card-foreground">
               Province
             </Label>
-            <Input
-              id="province"
-              placeholder="Enter Province"
-              value={formData.province || ""}
-              onChange={(e) => onChange("province", e.target.value)}
-              className="bg-background"
-            />
+            {selectedRegionValue === "__OTHER__" ? (
+              <Input
+                id="province"
+                placeholder="Enter Province"
+                value={formData.province || ""}
+                onChange={(e) => onChange("province", e.target.value)}
+                className="bg-background"
+              />
+            ) : (
+              <>
+                <Select
+                  value={selectedProvinceValue}
+                  onValueChange={(value) => {
+                    if (value === "__OTHER__") {
+                      onChange("province", "")
+                      onChange("municipality", "")
+                      return
+                    }
+                    onChange("province", value)
+                    onChange("municipality", "")
+                  }}
+                  disabled={!formData.regionOfResidence}
+                >
+                  <SelectTrigger id="province" className="w-full bg-background min-h-10">
+                    <SelectValue placeholder={formData.regionOfResidence ? "Select province" : "Select region first"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableProvinces.map((province) => (
+                      <SelectItem key={province} value={province}>
+                        {province}
+                      </SelectItem>
+                    ))}
+                    <SelectItem value="__OTHER__">Others</SelectItem>
+                  </SelectContent>
+                </Select>
+                {selectedProvinceValue === "__OTHER__" && (
+                  <Input
+                    id="province-other"
+                    placeholder="Enter Province"
+                    value={formData.province || ""}
+                    onChange={(e) => {
+                      onChange("province", e.target.value)
+                      onChange("municipality", "")
+                    }}
+                    className="bg-background"
+                  />
+                )}
+              </>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="municipality" className="text-sm font-semibold text-card-foreground">
               Municipality / City
             </Label>
-            <Input
-              id="municipality"
-              placeholder="Enter Municipality / City"
-              value={formData.municipality || ""}
-              onChange={(e) => onChange("municipality", e.target.value)}
-              className="bg-background"
-            />
+            {selectedRegionValue === "__OTHER__" || selectedProvinceValue === "__OTHER__" ? (
+              <Input
+                id="municipality"
+                placeholder="Enter Municipality / City"
+                value={formData.municipality || ""}
+                onChange={(e) => onChange("municipality", e.target.value)}
+                className="bg-background"
+              />
+            ) : (
+              <>
+                <Select
+                  value={selectedMunicipalityValue}
+                  onValueChange={(value) => {
+                    if (value === "__OTHER__") {
+                      onChange("municipality", "")
+                      return
+                    }
+                    onChange("municipality", value)
+                  }}
+                  disabled={!formData.province}
+                >
+                  <SelectTrigger id="municipality" className="w-full bg-background min-h-10">
+                    <SelectValue placeholder={formData.province ? "Select municipality / city" : "Select province first"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableMunicipalities.map((municipality) => (
+                      <SelectItem key={municipality} value={municipality}>
+                        {municipality}
+                      </SelectItem>
+                    ))}
+                    <SelectItem value="__OTHER__">Others</SelectItem>
+                  </SelectContent>
+                </Select>
+                {selectedMunicipalityValue === "__OTHER__" && (
+                  <Input
+                    id="municipality-other"
+                    placeholder="Enter Municipality / City"
+                    value={formData.municipality || ""}
+                    onChange={(e) => onChange("municipality", e.target.value)}
+                    className="bg-background"
+                  />
+                )}
+              </>
+            )}
           </div>
         </div>
 

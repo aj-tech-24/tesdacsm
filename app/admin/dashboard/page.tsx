@@ -1,7 +1,5 @@
 import { prisma } from "@/lib/prisma";
 import { getAllServiceNames } from "@/lib/services-data";
-import { DashboardLogoutButton } from "./logout-button";
-import { LayoutDashboard, Database, LogOut } from "lucide-react";
 import DashboardClient from "./DashboardClient";
 import { getSession } from "@/lib/session";
 
@@ -78,9 +76,8 @@ export default async function AdminDashboard(props: { searchParams?: Promise<{ [
         });
     }
 
-    const allFeedbackRaw = await prisma.feedback.findMany({
-        orderBy: { createdAt: "desc" }
-    });
+    // Keep raw/report tabs in sync with dashboard filters (period + role scope).
+    const allFeedbackRaw = [...allFeedback];
     const analysisRecord = await prisma.analysis.findUnique({ where: { id: 1 } });
     const initialAnalysis = analysisRecord?.content || "";
 
@@ -104,6 +101,41 @@ export default async function AdminDashboard(props: { searchParams?: Promise<{ [
         { name: "CCNTS", responses: allFeedback.filter((f) => officeMatches(f.office, "CCNTS")).length },
         { name: "PTC", responses: allFeedback.filter((f) => officeMatches(f.office, "PTC")).length },
     ];
+
+    const normalizeServiceName = (value: string) =>
+        value
+            .toLowerCase()
+            .replace(/[\u2018\u2019']/g, "")
+            .replace(/[^a-z0-9]+/g, " ")
+            .trim();
+
+    const canonicalServiceNames = getAllServiceNames();
+    const canonicalByNormalized = new Map<string, string>();
+    canonicalServiceNames.forEach((name) => {
+        canonicalByNormalized.set(normalizeServiceName(name), name);
+    });
+
+    const resolveCanonicalServiceName = (rawName: string) => {
+        const normalized = normalizeServiceName(rawName);
+        if (!normalized) return "Not Specified";
+
+        const exact = canonicalByNormalized.get(normalized);
+        if (exact) return exact;
+
+        const withoutTip = normalized.replace(/\btip\b/g, "").replace(/\s+/g, " ").trim();
+        if (withoutTip) {
+            const tipResolved = canonicalByNormalized.get(withoutTip);
+            if (tipResolved) return tipResolved;
+        }
+
+        for (const [candidateNormalized, candidateName] of canonicalByNormalized.entries()) {
+            if (candidateNormalized.includes(normalized) || normalized.includes(candidateNormalized)) {
+                return candidateName;
+            }
+        }
+
+        return rawName || "Not Specified";
+    };
 
     const officeBreakdown = (rows: any[]) => ({
         po: rows.filter((f) => officeMatches(f.office, "PO")).length,
@@ -165,11 +197,11 @@ export default async function AdminDashboard(props: { searchParams?: Promise<{ [
     ];
 
     const servicesMap: Record<string, { responses: number, internal: number, external: number, ratings: number[], po: number, ccnts: number, ptc: number }> = {};
-    getAllServiceNames().forEach(name => {
+    canonicalServiceNames.forEach(name => {
         servicesMap[name] = { responses: 0, internal: 0, external: 0, ratings: [], po: 0, ccnts: 0, ptc: 0 };
     });
     allFeedback.forEach(f => {
-        const s = f.citizensCharterService || "Not Specified";
+        const s = resolveCanonicalServiceName(f.citizensCharterService || "Not Specified");
         if (!servicesMap[s]) servicesMap[s] = { responses: 0, internal: 0, external: 0, ratings: [], po: 0, ccnts: 0, ptc: 0 };
         servicesMap[s].responses++;
         if (f.serviceCategory === "Internal") servicesMap[s].internal++;
@@ -284,33 +316,8 @@ export default async function AdminDashboard(props: { searchParams?: Promise<{ [
     const reportMetadata = await prisma.reportMetadata.findFirst();
 
     return (
-        <div className="min-h-screen bg-slate-50 print:bg-white print:p-0">
-            <nav className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between sticky top-0 z-10 shadow-sm print:hidden">
-                <div className="flex items-center gap-3">
-                    <div className="bg-blue-600 p-2 rounded-lg text-white">
-                        <LayoutDashboard className="w-5 h-5" />
-                    </div>
-                    <h1 className="text-xl font-bold text-slate-800 tracking-tight">
-                        TESDA <span className="text-blue-600">Analytics</span>
-                    </h1>
-                </div>
-                <div className="flex items-center gap-4">
-                    <div className="text-sm font-medium text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full flex items-center gap-2">
-                        <Database className="w-4 h-4 text-blue-500" />
-                        {allFeedback.length} Total Submissions
-                    </div>
-                    <span className="text-sm font-medium text-slate-600 bg-white px-3 py-1.5 rounded-full border border-slate-200">
-                        {session.office} | {session.role === "super_admin" ? "Super Admin" : "Office Admin"}
-                    </span>
-                    <form action="/api/admin/logout" method="POST">
-                        <button type="submit" className="text-slate-500 hover:text-red-600 flex items-center gap-2 text-sm font-medium px-3 py-1.5 rounded-full transition-colors hover:bg-red-50">
-                            <LogOut className="w-4 h-4" /> Logout
-                        </button>
-                    </form>
-                </div>
-            </nav>
-
-            <main className="p-6 md:p-8 max-w-7xl mx-auto space-y-8 print:p-0 print:m-0 print:block print:max-w-none print:w-full">
+        <div className="relative min-h-screen bg-gradient-to-br from-[#7b60ff] via-[#6f56f5] to-[#5b3fd1] print:bg-white print:p-0">
+            <main className="relative min-h-screen w-full print:m-0 print:block print:w-full print:max-w-none print:p-0">
                 <DashboardClient
                     userRole={session.role}
                     userOffice={session.office}

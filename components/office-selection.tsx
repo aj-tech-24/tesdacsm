@@ -1,6 +1,8 @@
 import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { Emoji3D } from "@/components/emoji-3d"
 import { ChevronRight } from "lucide-react"
+import Link from "next/link"
 
 const offices = [
     {
@@ -102,6 +104,12 @@ export function OfficeSelection({ onSelect }: { onSelect: (office: string) => vo
                             </Card>
                         )
                     })}
+                </div>
+
+                <div className="mt-8">
+                    <Button asChild variant="outline" className="rounded-full px-7 h-11 bg-white/80 backdrop-blur-sm border-slate-200 hover:bg-blue-50 text-slate-700 hover:text-blue-700 transition-colors duration-500">
+                        <Link href="/admin/login">Login Admin</Link>
+                    </Button>
                 </div>
             </div>
         </div>

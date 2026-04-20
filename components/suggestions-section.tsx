@@ -29,6 +29,12 @@ export const SuggestionsSection = memo(function SuggestionsSection({ formData, o
     { name: "Bea Len G. Embodo", position: "Administrative Staff" },
     { name: "Lester Van S. Alimento", position: "Administrative Staff" },
     { name: "Lewin T. Israel", position: "Administrative Staff" },
+    { name: "Jimark A. Tortor", position: "TESD Specialist II" },
+    { name: "Geoffrey Jr. D. Lastimoso", position: "TESD Specialist II" },
+    { name: "Jenquie Karen N. Alinsonorin", position: "TESD Specialist II" },
+    { name: "Mark Louie P. Galvanor", position: "Administrative Officer V" },
+    { name: "Ariel R. De Castro", position: "Administrative Assistant III" },
+    { name: "Luzyle C. Corcuera", position: "Sr. TESD Specialist" },
   ]
 
   const selectedEmployee = employees.find((employee) => employee.name === formData.employeeName)

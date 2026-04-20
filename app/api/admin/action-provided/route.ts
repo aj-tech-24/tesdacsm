@@ -3,16 +3,21 @@ import { prisma } from "@/lib/prisma";
 
 export async function POST(req: Request) {
     try {
-        const { id, actionProvided, dateResolved } = await req.json();
+        const { id, actionProvided, dateResolved, natureOfTransaction } = await req.json();
+        const numericId = parseInt(id);
 
-        if (!id) {
+        if (!id || Number.isNaN(numericId)) {
             return NextResponse.json({ error: "ID is required" }, { status: 400 });
         }
 
-        await prisma.feedback.update({
-            where: { id: parseInt(id) },
-            data: { actionProvided, dateResolved } as any,
-        });
+        // Use a raw update to avoid runtime schema mismatch when Prisma client generation is blocked.
+        await prisma.$executeRawUnsafe(
+            `UPDATE "Feedback" SET "actionProvided" = ?, "dateResolved" = ?, "natureOfTransaction" = ? WHERE "id" = ?`,
+            actionProvided ?? null,
+            dateResolved ?? null,
+            natureOfTransaction ?? null,
+            numericId,
+        );
 
         return NextResponse.json({ success: true });
     } catch (error) {

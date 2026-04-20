@@ -5,12 +5,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ReactNode } from "react";
+import { CalendarRange, Filter } from "lucide-react";
 
 interface MonthFilterProps {
     children?: ReactNode;
+    totalResponses?: number;
+    reportPeriodLabel?: string;
 }
 
-export default function MonthFilter({ children }: MonthFilterProps) {
+export default function MonthFilter({ children, totalResponses, reportPeriodLabel }: MonthFilterProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
 
@@ -40,34 +43,55 @@ export default function MonthFilter({ children }: MonthFilterProps) {
     const years = Array.from({ length: 5 }, (_, i) => (currentYear - i).toString());
 
     return (
-        <div className="flex flex-col md:flex-row items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-100 print:hidden mb-6">
-            <h3 className="font-semibold text-slate-700 mr-4">Filter Data</h3>
+        <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm print:hidden">
+            <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+                <div className="flex items-center gap-2 text-slate-700">
+                    <div className="rounded-lg bg-slate-100 p-1.5">
+                        <CalendarRange className="h-4 w-4" />
+                    </div>
+                    <h3 className="text-sm font-semibold tracking-wide">Filter Dashboard Data</h3>
+                </div>
 
-            <Select value={month} onValueChange={setMonth}>
-                <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Select Month" />
-                </SelectTrigger>
-                <SelectContent>
-                    {months.map(m => <SelectItem key={m.val} value={m.val}>{m.label}</SelectItem>)}
-                </SelectContent>
-            </Select>
+                <div className="flex w-full flex-col gap-2 md:flex-row md:items-center xl:w-auto">
+                    <Select value={month} onValueChange={setMonth}>
+                        <SelectTrigger className="w-full md:w-[190px]">
+                            <SelectValue placeholder="Select Month" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {months.map(m => <SelectItem key={m.val} value={m.val}>{m.label}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
 
-            <Select value={year} onValueChange={setYear}>
-                <SelectTrigger className="w-[120px]">
-                    <SelectValue placeholder="Year" />
-                </SelectTrigger>
-                <SelectContent>
-                    {years.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}
-                </SelectContent>
-            </Select>
+                    <Select value={year} onValueChange={setYear}>
+                        <SelectTrigger className="w-full md:w-[130px]">
+                            <SelectValue placeholder="Year" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {years.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
 
-            <Button onClick={handleApply} variant="default" className="bg-blue-600 hover:bg-blue-700">
-                Apply Filter
-            </Button>
+                    <Button onClick={handleApply} variant="default" className="gap-2 bg-slate-900 hover:bg-slate-800">
+                        <Filter className="h-4 w-4" /> Apply Filter
+                    </Button>
+                </div>
 
-            <div className="flex-1"></div>
-
-            {children}
+                <div className="flex flex-wrap items-center gap-2 xl:ml-auto">
+                    {typeof totalResponses !== "undefined" && (
+                        <div className="min-w-[132px] rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5">
+                            <p className="text-[11px] uppercase tracking-wide text-slate-500">Total Responses</p>
+                            <p className="mt-1 text-lg font-semibold leading-none text-slate-900">{totalResponses}</p>
+                        </div>
+                    )}
+                    {reportPeriodLabel && (
+                        <div className="min-w-[152px] rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5">
+                            <p className="text-[11px] uppercase tracking-wide text-slate-500">Report Period</p>
+                            <p className="mt-1 text-sm font-semibold leading-tight text-slate-900">{reportPeriodLabel}</p>
+                        </div>
+                    )}
+                    <div>{children}</div>
+                </div>
+            </div>
         </div>
     );
 }

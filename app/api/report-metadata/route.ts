@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
                     reportPeriod: "",
                     regionExecutive: "Region XI - TESDA Regional Office",
                     provinceDistrict: "Province of Davao del Sur",
-                    operatingUnit: "",
+                    operatingUnit: "Office of the Provincial Director",
                     headOfUnit: "",
                     designation: "",
                     cusatFocal: "",
@@ -34,8 +34,18 @@ export async function GET(req: NextRequest) {
 export async function PUT(req: NextRequest) {
     try {
         const session = await getSession();
-        if (!session || session.role !== "super_admin") {
-            return NextResponse.json({ error: "Forbidden: Only super admin can update metadata" }, { status: 403 });
+        const canManageMetadata =
+            !!session &&
+            (
+                session.role === "super_admin" ||
+                (session.role === "office_admin" && String(session.office || "").toUpperCase() === "PO")
+            );
+
+        if (!canManageMetadata) {
+            return NextResponse.json(
+                { error: "Forbidden: Only super admin or PO admin can update metadata" },
+                { status: 403 },
+            );
         }
 
         const body = await req.json();

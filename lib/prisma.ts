@@ -7,10 +7,10 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 function createPrismaClient(): PrismaClient {
-    const dbUrl = process.env.TURSO_DATABASE_URL || process.env.DATABASE_URL;
+    const dbUrl = process.env.TURSO_DATABASE_URL;
 
     if (!dbUrl) {
-        throw new Error("Missing database URL. Set TURSO_DATABASE_URL or DATABASE_URL.");
+        throw new Error("Missing TURSO_DATABASE_URL.");
     }
 
     const libsql = createClient({
