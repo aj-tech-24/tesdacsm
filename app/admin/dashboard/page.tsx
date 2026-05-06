@@ -5,6 +5,29 @@ import { getSession } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
+const normalizeFormDate = (value: unknown) => {
+    const raw = String(value ?? "").trim();
+    if (!raw) return null;
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+
+    const parsed = new Date(raw);
+    if (Number.isNaN(parsed.getTime())) return null;
+    return parsed.toISOString().slice(0, 10);
+};
+
+const isWithinPeriod = (formDate: unknown, year: number, month?: number | null) => {
+    const normalized = normalizeFormDate(formDate);
+    if (!normalized) return false;
+
+    const [dateYear, dateMonth] = normalized.split("-").map((part) => parseInt(part, 10));
+    if (Number.isNaN(dateYear) || Number.isNaN(dateMonth)) return false;
+
+    if (dateYear !== year) return false;
+    if (typeof month === "number") return dateMonth === month;
+    return true;
+};
+
 export default async function AdminDashboard(props: { searchParams?: Promise<{ [key: string]: string | undefined }> | { [key: string]: string | undefined } }) {
     const session = await getSession();
     if (!session) {
@@ -39,31 +62,17 @@ export default async function AdminDashboard(props: { searchParams?: Promise<{ [
         }
     }
 
-    let dateFilter: any = {};
-    if (yearStr) {
-        const year = parseInt(yearStr);
-        if (monthStr && monthStr !== "all") {
-            const month = parseInt(monthStr);
-            dateFilter = {
-                createdAt: {
-                    gte: new Date(year, month - 1, 1),
-                    lt: new Date(year, month, 1)
-                }
-            };
-        } else {
-            dateFilter = {
-                createdAt: {
-                    gte: new Date(year, 0, 1),
-                    lt: new Date(year + 1, 0, 1)
-                }
-            };
-        }
-    }
-
     let allFeedback = await prisma.feedback.findMany({
-        where: dateFilter,
         orderBy: { createdAt: "desc" }
     });
+
+    if (yearStr) {
+        const year = parseInt(yearStr, 10);
+        const month = monthStr && monthStr !== "all" ? parseInt(monthStr, 10) : null;
+        if (!Number.isNaN(year)) {
+            allFeedback = allFeedback.filter((feedback) => isWithinPeriod(feedback.formDate, year, Number.isNaN(month as number) ? null : month));
+        }
+    }
 
     // Role-based filtering: office admins only see their own office data
     if (session.role === "office_admin") {

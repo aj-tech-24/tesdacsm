@@ -1,12 +1,12 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MonthFilter from "./MonthFilter";
 import DashboardVisualizations from "./DashboardVisualizations";
 import ActionManager from "./action-manager";
 import AnalysisForm from "./analysis-form";
 import AllFeedbacksTab from "./AllFeedbacksTab";
-import { useState } from "react";
 import {
     BarChart3,
     ClipboardList,
@@ -80,6 +80,14 @@ export default function DashboardClient({
         { value: "all-feedbacks", label: "Feedbacks", icon: Layers3 },
     ];
     const mobileNavGridClass = userRole === "super_admin" ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-2";
+
+    useEffect(() => {
+        setFeedbackList(allFeedback);
+    }, [allFeedback]);
+
+    useEffect(() => {
+        setFeedbackRawList(allFeedbackRaw);
+    }, [allFeedbackRaw]);
 
     const handleFeedbackUpdated = (id: number, patch: Record<string, string>) => {
         setFeedbackList((prev) => prev.map((row) => (Number(row.id) === id ? { ...row, ...patch } : row)));
