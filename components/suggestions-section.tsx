@@ -1,6 +1,6 @@
 "use client"
 
-import { memo } from "react"
+import { memo, useEffect, useState } from "react"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -38,6 +38,13 @@ export const SuggestionsSection = memo(function SuggestionsSection({ formData, o
   ]
 
   const selectedEmployee = employees.find((employee) => employee.name === formData.employeeName)
+  
+    const [otherSelected, setOtherSelected] = useState(false)
+  
+    useEffect(() => {
+      const isCustom = formData.employeeName !== "" && !employees.some((e) => e.name === formData.employeeName)
+      setOtherSelected(isCustom)
+    }, [formData.employeeName])
 
   return (
     <Card className="border-0 shadow-sm bg-card">
@@ -79,21 +86,48 @@ export const SuggestionsSection = memo(function SuggestionsSection({ formData, o
             <Label htmlFor="employeeName" className="text-sm font-medium text-card-foreground">
               {"Employee's Full Name"}
             </Label>
-            <Select value={formData.employeeName} onValueChange={(value) => onChange("employeeName", value)}>
-              <SelectTrigger id="employeeName" className="w-full bg-background">
-                <SelectValue placeholder="Select employee" />
-              </SelectTrigger>
-              <SelectContent>
-                {employees.map((employee) => (
-                  <SelectItem key={employee.name} value={employee.name}>
+            {otherSelected ? (
+              <Input
+                id="employeeName"
+                placeholder="Enter employee's full name"
+                value={formData.employeeName}
+                onChange={(e) => onChange("employeeName", e.target.value)}
+                className="bg-background"
+              />
+            ) : (
+              <Select
+                value={formData.employeeName}
+                onValueChange={(value) => {
+                  if (value === "__other__") {
+                    setOtherSelected(true)
+                    onChange("employeeName", "")
+                  } else {
+                    setOtherSelected(false)
+                    onChange("employeeName", value)
+                  }
+                }}
+              >
+                <SelectTrigger id="employeeName" className="w-full bg-background">
+                  <SelectValue placeholder="Select employee" />
+                </SelectTrigger>
+                <SelectContent>
+                  {employees.map((employee) => (
+                    <SelectItem key={employee.name} value={employee.name}>
+                      <div className="flex flex-col leading-tight">
+                        <span>{employee.name}</span>
+                        <span className="text-xs text-muted-foreground italic">{employee.position}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                  <SelectItem value="__other__">
                     <div className="flex flex-col leading-tight">
-                      <span>{employee.name}</span>
-                      <span className="text-xs text-muted-foreground italic">{employee.position}</span>
+                      <span>Other</span>
+                      <span className="text-xs text-muted-foreground italic">Employee not listed</span>
                     </div>
                   </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                </SelectContent>
+              </Select>
+            )}
           </div>
         </div>
       </CardContent>
