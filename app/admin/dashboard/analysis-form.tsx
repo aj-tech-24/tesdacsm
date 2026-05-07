@@ -30,23 +30,23 @@ export default function AnalysisForm({ initialAnalysis }: { initialAnalysis: str
     };
 
     return (
-        <Card className="mt-6 rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <Card className="mt-4 rounded-xl border border-slate-200 bg-white shadow-sm">
             <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-xl tracking-tight text-slate-900">
-                    <FileText className="h-6 w-6 text-cyan-700" />
+                <CardTitle className="flex items-center gap-2 text-lg tracking-tight text-slate-900">
+                    <FileText className="h-5 w-5 text-cyan-700" />
                     Overall Dashboard Analysis
                 </CardTitle>
                 <CardDescription>Enter your summary and key findings based on the metrics above.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3 pt-0">
                 <textarea
-                    className="min-h-[220px] w-full resize-y rounded-xl border border-slate-200 bg-slate-50 p-4 text-slate-700 outline-none focus:ring-2 focus:ring-slate-400"
+                    className="min-h-[180px] w-full resize-y rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-slate-400"
                     placeholder="Type your overall analysis here..."
                     value={analysis}
                     onChange={(e) => setAnalysis(e.target.value)}
                 />
                 <div className="flex justify-end">
-                    <Button onClick={handleSave} disabled={isSaving} className="bg-slate-900 text-white hover:bg-slate-800">
+                    <Button onClick={handleSave} size="sm" disabled={isSaving} className="h-9 bg-slate-900 px-3 text-xs text-white hover:bg-slate-800">
                         {isSaving ? "Saving..." : <><Save className="w-4 h-4 mr-2" /> Save Analysis</>}
                     </Button>
                 </div>

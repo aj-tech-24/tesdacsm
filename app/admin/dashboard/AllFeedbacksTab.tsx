@@ -4,13 +4,14 @@ import { useMemo, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Database, Download, Loader2, Pencil, Printer } from "lucide-react";
+import { ArrowUpDown, Database, Download, Loader2, Pencil, Printer } from "lucide-react";
 import { buildClientFeedbackPrintHtml, type FeedbackPrintSnapshot } from "@/lib/csm-print-template";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getServicesForOfficeAndTransactions } from "@/lib/services-data";
+import { toast } from "sonner";
 
 const safeFileNamePart = (value: string) => {
     const cleaned = value.replace(/[^a-zA-Z0-9\s_-]/g, "").trim().replace(/\s+/g, "_");
@@ -95,8 +96,23 @@ const normalizeDateForInput = (value: unknown) => {
     return parsed.toISOString().slice(0, 10);
 };
 
+const formatDateForDisplay = (value: unknown) => {
+    const raw = asText(value).trim();
+    if (!raw) return "";
+
+    const parsed = new Date(raw);
+    if (Number.isNaN(parsed.getTime())) return raw;
+
+    return parsed.toLocaleDateString("en-PH", {
+        year: "numeric",
+        month: "short",
+        day: "2-digit",
+    });
+};
+
 export default function AllFeedbacksTab({ feedbackList, reportPeriodLabel }: { feedbackList: any[]; reportPeriodLabel?: string }) {
     const [page, setPage] = useState(1);
+    const [formDateSort, setFormDateSort] = useState<"asc" | "desc">("desc");
     const [isGeneratingReport, setIsGeneratingReport] = useState(false);
     const [editingRow, setEditingRow] = useState<any | null>(null);
     const [isCustomServiceEdit, setIsCustomServiceEdit] = useState(false);
@@ -147,12 +163,31 @@ export default function AllFeedbacksTab({ feedbackList, reportPeriodLabel }: { f
         [feedbackList, localEditsById]
     );
 
-    const totalPages = Math.max(1, Math.ceil(mergedFeedbackList.length / pageSize));
+    const sortedFeedbackList = useMemo(() => {
+        const toTime = (value: unknown) => {
+            const raw = asText(value).trim();
+            if (!raw) return null;
+            const parsed = new Date(raw);
+            if (Number.isNaN(parsed.getTime())) return null;
+            return parsed.getTime();
+        };
+
+        return [...mergedFeedbackList].sort((a, b) => {
+            const aTime = toTime(a.formDate);
+            const bTime = toTime(b.formDate);
+            if (aTime === null && bTime === null) return 0;
+            if (aTime === null) return 1;
+            if (bTime === null) return -1;
+            return formDateSort === "asc" ? aTime - bTime : bTime - aTime;
+        });
+    }, [mergedFeedbackList, formDateSort]);
+
+    const totalPages = Math.max(1, Math.ceil(sortedFeedbackList.length / pageSize));
 
     const paginatedRows = useMemo(() => {
         const start = (page - 1) * pageSize;
-        return mergedFeedbackList.slice(start, start + pageSize);
-    }, [mergedFeedbackList, page]);
+        return sortedFeedbackList.slice(start, start + pageSize);
+    }, [sortedFeedbackList, page]);
 
     const availableServiceGroupsForEdit = useMemo(() => {
         if (!editForm.office || !editForm.transactionTypes) return [];
@@ -267,6 +302,7 @@ export default function AllFeedbacksTab({ feedbackList, reportPeriodLabel }: { f
                 } catch {
                     // Keep fallback message for non-JSON error responses.
                 }
+                toast.error(message);
                 throw new Error(message);
             }
 
@@ -280,8 +316,10 @@ export default function AllFeedbacksTab({ feedbackList, reportPeriodLabel }: { f
             link.click();
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
+            toast.success("Report generated successfully.");
         } catch (error) {
             console.error("Failed to generate report", error);
+            toast.error("Unable to generate report right now. Please try again.");
             window.alert("Unable to generate report right now. Please try again.");
         } finally {
             setIsGeneratingReport(false);
@@ -357,6 +395,7 @@ export default function AllFeedbacksTab({ feedbackList, reportPeriodLabel }: { f
                 } catch {
                     // Keep fallback message when response body is not JSON.
                 }
+                toast.error(message);
                 throw new Error(message);
             }
 
@@ -365,9 +404,11 @@ export default function AllFeedbacksTab({ feedbackList, reportPeriodLabel }: { f
                 [Number(editingRow.id)]: { ...editForm },
             }));
             setEditingRow(null);
+            toast.success("Feedback updated successfully.");
             window.alert("Feedback updated successfully.");
         } catch (error) {
             console.error("Failed to update feedback", error);
+            toast.error("Unable to update feedback right now. Please try again.");
             window.alert("Unable to update feedback right now. Please try again.");
         } finally {
             setIsSavingEdit(false);
@@ -375,68 +416,81 @@ export default function AllFeedbacksTab({ feedbackList, reportPeriodLabel }: { f
     };
 
     return (
-        <Card className="mt-6 rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <Card className="mt-4 rounded-xl border border-slate-200 bg-white shadow-sm">
             <CardHeader>
                 <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                     <div>
-                        <CardTitle className="flex items-center gap-2 text-xl tracking-tight text-slate-900">
-                            <Database className="h-6 w-6 text-sky-700" />
+                        <CardTitle className="flex items-center gap-2 text-lg tracking-tight text-slate-900">
+                            <Database className="h-5 w-5 text-sky-700" />
                             Feedbacks
                         </CardTitle>
                         <CardDescription>
                             Feedback records from submitted client forms.
                         </CardDescription>
                     </div>
-                    <Button onClick={handleGenerateReport} className="gap-2 bg-slate-900 hover:bg-slate-800" disabled={isGeneratingReport}>
+                    <Button onClick={handleGenerateReport} size="sm" className="h-9 gap-2 bg-slate-900 px-3 hover:bg-slate-800" disabled={isGeneratingReport}>
                         {isGeneratingReport ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} Generate Report
                     </Button>
                 </div>
             </CardHeader>
-            <CardContent className="overflow-x-auto">
+            <CardContent className="overflow-x-auto p-4 pt-0">
                 <Table>
                     <TableHeader className="bg-slate-50/80">
                         <TableRow>
-                            <TableHead>Control No.</TableHead>
-                            <TableHead>Client Name</TableHead>
-                            <TableHead>Office</TableHead>
-                            <TableHead>Service</TableHead>
-                            <TableHead>Action Provided</TableHead>
-                            <TableHead className="w-[120px] text-center">Action</TableHead>
+                            <TableHead className="h-9 px-2 text-xs">Control No.</TableHead>
+                            <TableHead className="h-9 px-2 text-xs">Client Name</TableHead>
+                            <TableHead className="h-9 px-2 text-xs">
+                                <button
+                                    type="button"
+                                    onClick={() => setFormDateSort((prev) => (prev === "asc" ? "desc" : "asc"))}
+                                    className="inline-flex items-center gap-1 text-xs font-medium text-slate-700 hover:text-slate-900"
+                                    aria-label={`Sort Form Date ${formDateSort === "asc" ? "descending" : "ascending"}`}
+                                    title={`Sort by Form Date (${formDateSort === "asc" ? "oldest first" : "newest first"})`}
+                                >
+                                    Form Date
+                                    <ArrowUpDown className="h-3.5 w-3.5" />
+                                </button>
+                            </TableHead>
+                            <TableHead className="h-9 px-2 text-xs">Office</TableHead>
+                            <TableHead className="h-9 px-2 text-xs">Service</TableHead>
+                            <TableHead className="h-9 px-2 text-xs">Action Provided</TableHead>
+                            <TableHead className="h-9 w-[96px] px-2 text-center text-xs">Action</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {paginatedRows.map((row) => (
                             <TableRow key={row.id}>
-                                <TableCell>{row.controlNumber || ""}</TableCell>
-                                <TableCell>{row.name || "Anonymous"}</TableCell>
-                                <TableCell>{row.office || ""}</TableCell>
-                                <TableCell className="max-w-[260px] truncate" title={row.citizensCharterService || ""}>
+                                <TableCell className="px-2 py-2 text-xs">{row.controlNumber || ""}</TableCell>
+                                <TableCell className="px-2 py-2 text-xs">{row.name || "Anonymous"}</TableCell>
+                                <TableCell className="px-2 py-2 text-xs">{formatDateForDisplay(row.formDate)}</TableCell>
+                                <TableCell className="px-2 py-2 text-xs">{row.office || ""}</TableCell>
+                                <TableCell className="max-w-[220px] truncate px-2 py-2 text-xs" title={row.citizensCharterService || ""}>
                                     {row.citizensCharterService || ""}
                                 </TableCell>
-                                <TableCell className="max-w-[240px] truncate" title={row.actionProvided || ""}>
+                                <TableCell className="max-w-[200px] truncate px-2 py-2 text-xs" title={row.actionProvided || ""}>
                                     {row.actionProvided || ""}
                                 </TableCell>
-                                <TableCell>
+                                <TableCell className="px-2 py-2">
                                     <div className="flex items-center justify-center gap-2">
                                         <Button
                                             variant="outline"
                                             size="icon"
-                                            className="h-8 w-8 border-slate-300 text-slate-700 hover:bg-slate-100"
+                                            className="h-7 w-7 border-slate-300 text-slate-700 hover:bg-slate-100"
                                             onClick={() => openEditDialog(row)}
                                             title="Edit feedback"
                                             aria-label="Edit feedback"
                                         >
-                                            <Pencil className="h-4 w-4" />
+                                            <Pencil className="h-3.5 w-3.5" />
                                         </Button>
                                         <Button
                                             variant="outline"
                                             size="icon"
-                                            className="h-8 w-8 border-slate-300 text-slate-700 hover:bg-slate-100"
+                                            className="h-7 w-7 border-slate-300 text-slate-700 hover:bg-slate-100"
                                             onClick={() => handlePrintFeedbackForm(row)}
                                             title="Print feedback form"
                                             aria-label="Print feedback form"
                                         >
-                                            <Printer className="h-4 w-4" />
+                                            <Printer className="h-3.5 w-3.5" />
                                         </Button>
                                     </div>
                                 </TableCell>
@@ -445,22 +499,22 @@ export default function AllFeedbacksTab({ feedbackList, reportPeriodLabel }: { f
                     </TableBody>
                 </Table>
             </CardContent>
-            <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50/60 p-4">
-                <span className="text-sm text-slate-500">
-                    Showing {(page - 1) * pageSize + 1} to {Math.min(page * pageSize, mergedFeedbackList.length)} of {mergedFeedbackList.length} entries
+            <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50/60 p-3">
+                <span className="text-xs text-slate-500">
+                    Showing {(page - 1) * pageSize + 1} to {Math.min(page * pageSize, sortedFeedbackList.length)} of {sortedFeedbackList.length} entries
                 </span>
                 <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>
+                    <Button variant="outline" size="sm" className="h-8 px-2 text-xs" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>
                         Previous
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages}>
+                    <Button variant="outline" size="sm" className="h-8 px-2 text-xs" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages}>
                         Next
                     </Button>
                 </div>
             </div>
 
             <Dialog open={Boolean(editingRow)} onOpenChange={(open) => !open && setEditingRow(null)}>
-                <DialogContent className="sm:max-w-5xl">
+                <DialogContent className="sm:max-w-4xl">
                     <DialogHeader>
                         <DialogTitle>Edit Feedback</DialogTitle>
                         <DialogDescription>Update any form field to correct this feedback entry.</DialogDescription>

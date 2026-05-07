@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ReactNode } from "react";
-import { CalendarRange, Filter } from "lucide-react";
+import { CalendarRange, Filter, Loader2 } from "lucide-react";
 
 interface MonthFilterProps {
     children?: ReactNode;
@@ -16,19 +16,33 @@ interface MonthFilterProps {
 export default function MonthFilter({ children, totalResponses, reportPeriodLabel }: MonthFilterProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
+    const searchParamsString = searchParams.toString();
 
     const [month, setMonth] = useState(searchParams.get("month") || "");
-    const [year, setYear] = useState(searchParams.get("year") || new Date().getFullYear().toString());
+    const [year, setYear] = useState(searchParams.get("year") || "all");
+    const [office, setOffice] = useState(searchParams.get("office") || "all");
+    const [isApplying, setIsApplying] = useState(false);
+
+    useEffect(() => {
+        setIsApplying(false);
+    }, [searchParamsString]);
 
     const handleApply = () => {
         const params = new URLSearchParams(searchParams);
         if (month && month !== "all") params.set("month", month);
         else params.delete("month");
 
-        if (year) params.set("year", year);
+        if (year && year !== "all") params.set("year", year);
         else params.delete("year");
 
-        router.push(`?${params.toString()}`);
+        if (office && office !== "all") params.set("office", office);
+        else params.delete("office");
+
+        const nextQuery = params.toString();
+        if (nextQuery === searchParamsString) return;
+
+        setIsApplying(true);
+        router.push(`?${nextQuery}`);
     };
 
     const months = [
@@ -40,21 +54,40 @@ export default function MonthFilter({ children, totalResponses, reportPeriodLabe
     ];
 
     const currentYear = new Date().getFullYear();
-    const years = Array.from({ length: 5 }, (_, i) => (currentYear - i).toString());
+    const years = ["all", ...Array.from({ length: 5 }, (_, i) => (currentYear - i).toString())];
+
+    const offices = [
+        { val: "all", label: "All Offices" },
+        { val: "ccnts", label: "Region XI/TESDA CCNTS" },
+        { val: "po", label: "REGION XI/PROVINICAL OFFICE" },
+        { val: "ptc-ds", label: "Region XI/TESDA PTC - DS" },
+    ];
+
+    const hasActiveFilters = month !== "" || year !== "all" || office !== "all";
+
+    const handleClear = () => {
+        if (!hasActiveFilters || isApplying) return;
+
+        setMonth("");
+        setYear("all");
+        setOffice("all");
+        setIsApplying(true);
+        router.push("?");
+    };
 
     return (
-        <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm print:hidden">
-            <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+        <div className="mb-4 rounded-xl border border-slate-200 bg-white p-3 shadow-sm print:hidden">
+            <div className="flex flex-col gap-2.5 xl:flex-row xl:items-center xl:justify-between">
                 <div className="flex items-center gap-2 text-slate-700">
-                    <div className="rounded-lg bg-slate-100 p-1.5">
-                        <CalendarRange className="h-4 w-4" />
+                    <div className="rounded-lg bg-slate-100 p-1">
+                        <CalendarRange className="h-3.5 w-3.5" />
                     </div>
-                    <h3 className="text-sm font-semibold tracking-wide">Filter Dashboard Data</h3>
+                    <h3 className="text-xs font-semibold tracking-wide">Filter Dashboard Data</h3>
                 </div>
 
                 <div className="flex w-full flex-col gap-2 md:flex-row md:items-center xl:w-auto">
-                    <Select value={month} onValueChange={setMonth}>
-                        <SelectTrigger className="w-full md:w-[190px]">
+                    <Select value={month} onValueChange={setMonth} disabled={isApplying}>
+                        <SelectTrigger className="h-9 w-full md:w-[170px]">
                             <SelectValue placeholder="Select Month" />
                         </SelectTrigger>
                         <SelectContent>
@@ -62,31 +95,57 @@ export default function MonthFilter({ children, totalResponses, reportPeriodLabe
                         </SelectContent>
                     </Select>
 
-                    <Select value={year} onValueChange={setYear}>
-                        <SelectTrigger className="w-full md:w-[130px]">
+                    <Select value={year} onValueChange={setYear} disabled={isApplying}>
+                        <SelectTrigger className="h-9 w-full md:w-[120px]">
                             <SelectValue placeholder="Year" />
                         </SelectTrigger>
                         <SelectContent>
-                            {years.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}
+                            {years.map(y => <SelectItem key={y} value={y}>{y === "all" ? "All Years" : y}</SelectItem>)}
                         </SelectContent>
                     </Select>
 
-                    <Button onClick={handleApply} variant="default" className="gap-2 bg-slate-900 hover:bg-slate-800">
-                        <Filter className="h-4 w-4" /> Apply Filter
-                    </Button>
+                    <Select value={office} onValueChange={setOffice} disabled={isApplying}>
+                        <SelectTrigger className="h-9 w-full md:w-[200px]">
+                            <SelectValue placeholder="Office" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {offices.map(o => <SelectItem key={o.val} value={o.val}>{o.label}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+
+                    <div className="flex items-center gap-2">
+                        <Button onClick={handleApply} size="sm" variant="default" disabled={isApplying} className="h-9 gap-2 bg-slate-900 px-3 text-xs hover:bg-slate-800 disabled:cursor-wait disabled:opacity-80">
+                            {isApplying ? <Loader2 className="h-4 w-4 animate-spin" /> : <Filter className="h-4 w-4" />}
+                            {isApplying ? "Applying..." : "Apply Filter"}
+                        </Button>
+
+                        {hasActiveFilters ? (
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={handleClear}
+                                disabled={isApplying}
+                                className="h-9 px-3 text-xs text-slate-600 hover:bg-slate-100"
+                            >
+                                Clear filters
+                            </Button>
+                        ) : null}
+                    </div>
+
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2 xl:ml-auto">
                     {typeof totalResponses !== "undefined" && (
-                        <div className="min-w-[132px] rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5">
+                        <div className="min-w-[116px] rounded-lg border border-slate-200 bg-slate-50/80 px-2.5 py-2">
                             <p className="text-[11px] uppercase tracking-wide text-slate-500">Total Responses</p>
-                            <p className="mt-1 text-lg font-semibold leading-none text-slate-900">{totalResponses}</p>
+                            <p className="mt-1 text-base font-semibold leading-none text-slate-900">{totalResponses}</p>
                         </div>
                     )}
                     {reportPeriodLabel && (
-                        <div className="min-w-[152px] rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5">
+                        <div className="min-w-[140px] rounded-lg border border-slate-200 bg-slate-50/80 px-2.5 py-2">
                             <p className="text-[11px] uppercase tracking-wide text-slate-500">Report Period</p>
-                            <p className="mt-1 text-sm font-semibold leading-tight text-slate-900">{reportPeriodLabel}</p>
+                            <p className="mt-1 text-xs font-semibold leading-tight text-slate-900">{reportPeriodLabel}</p>
                         </div>
                     )}
                     <div>{children}</div>

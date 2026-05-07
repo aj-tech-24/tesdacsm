@@ -38,7 +38,8 @@ export default async function AdminDashboard(props: { searchParams?: Promise<{ [
     const monthStr = sp?.month as string | undefined;
     const yearStr = sp?.year as string | undefined;
     const currentYear = new Date().getFullYear();
-    const reportYear = yearStr || currentYear.toString();
+    const hasSpecificYear = !!yearStr && yearStr !== "all";
+    const reportYear = hasSpecificYear ? yearStr : "All Years";
     const monthNames = [
         "January",
         "February",
@@ -66,7 +67,7 @@ export default async function AdminDashboard(props: { searchParams?: Promise<{ [
         orderBy: { createdAt: "desc" }
     });
 
-    if (yearStr) {
+    if (hasSpecificYear) {
         const year = parseInt(yearStr, 10);
         const month = monthStr && monthStr !== "all" ? parseInt(monthStr, 10) : null;
         if (!Number.isNaN(year)) {
@@ -85,13 +86,10 @@ export default async function AdminDashboard(props: { searchParams?: Promise<{ [
         });
     }
 
-    // Keep raw/report tabs in sync with dashboard filters (period + role scope).
-    const allFeedbackRaw = [...allFeedback];
+    
+
     const analysisRecord = await prisma.analysis.findUnique({ where: { id: 1 } });
     const initialAnalysis = analysisRecord?.content || "";
-
-    const totalResponses = allFeedback.length;
-    const perc = (n: number) => totalResponses > 0 ? ((n / totalResponses) * 100).toFixed(2) + "%" : "0%";
 
     const officeMatches = (office: string | null | undefined, key: "PO" | "CCNTS" | "PTC") => {
         const value = (office || "").toUpperCase();
@@ -104,6 +102,24 @@ export default async function AdminDashboard(props: { searchParams?: Promise<{ [
             value.includes("TESDA PO DS")
         ) && !value.includes("PTC") && !value.includes("CCNTS");
     };
+
+    // Apply explicit office filter from query param (if provided)
+    const officeParam = sp?.office as string | undefined;
+    if (officeParam && officeParam !== "all") {
+        if (officeParam === "ccnts") {
+            allFeedback = allFeedback.filter((f) => officeMatches(f.office, "CCNTS"));
+        } else if (officeParam === "po") {
+            allFeedback = allFeedback.filter((f) => officeMatches(f.office, "PO"));
+        } else if (officeParam === "ptc-ds" || officeParam === "ptc") {
+            allFeedback = allFeedback.filter((f) => officeMatches(f.office, "PTC"));
+        }
+    }
+
+    // Keep raw/report tabs in sync with dashboard filters (period + role scope).
+    const allFeedbackRaw = [...allFeedback];
+
+    const totalResponses = allFeedback.length;
+    const perc = (n: number) => totalResponses > 0 ? ((n / totalResponses) * 100).toFixed(2) + "%" : "0%";
 
     const officeResponseData = [
         { name: "PO", responses: allFeedback.filter((f) => officeMatches(f.office, "PO")).length },

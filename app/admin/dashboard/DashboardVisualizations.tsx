@@ -20,8 +20,8 @@ interface Props {
 }
 
 const COLORS = ["#0ea5e9", "#f97316", "#14b8a6", "#f43f5e", "#06b6d4", "#84cc16", "#f59e0b", "#0891b2", "#64748b"];
-const chartCardClass = "rounded-2xl border border-slate-200 bg-white shadow-sm";
-const chartCardTitleClass = "text-base font-semibold tracking-tight text-slate-900";
+const chartCardClass = "rounded-xl border border-slate-200 bg-white shadow-sm";
+const chartCardTitleClass = "text-sm font-semibold tracking-tight text-slate-900";
 
 export default function DashboardVisualizations({
     totalResponses, genderData, ageData, customerTypeData, transactionData, natureData, serviceData, ccData, actionData, sqdResults
@@ -57,23 +57,23 @@ export default function DashboardVisualizations({
     const positiveSqdRate = totalResponses > 0 ? `${((positiveSqdCount / totalResponses) * 100).toFixed(1)}%` : "0.0%";
 
     return (
-        <div className="w-full space-y-6 pb-10">
-            <section className="grid grid-cols-1 gap-3 md:grid-cols-3">
+        <div className="w-full space-y-4 pb-8">
+            <section className="grid grid-cols-1 gap-2.5 md:grid-cols-3">
                 <Card className={chartCardClass}>
-                    <CardContent className="flex items-start gap-3 p-4">
-                        <div className="rounded-xl bg-cyan-100 p-2 text-cyan-700">
-                            <Gauge className="h-4 w-4" />
+                    <CardContent className="flex items-start gap-2.5 p-3">
+                        <div className="rounded-lg bg-cyan-100 p-1.5 text-cyan-700">
+                            <Gauge className="h-3.5 w-3.5" />
                         </div>
                         <div>
                             <p className="text-xs uppercase tracking-wider text-slate-500">Total Responses</p>
-                            <p className="mt-1 text-2xl font-semibold text-slate-900">{totalResponses}</p>
+                            <p className="mt-1 text-xl font-semibold text-slate-900">{totalResponses}</p>
                         </div>
                     </CardContent>
                 </Card>
                 <Card className={chartCardClass}>
-                    <CardContent className="flex items-start gap-3 p-4">
-                        <div className="rounded-xl bg-emerald-100 p-2 text-emerald-700">
-                            <Sparkles className="h-4 w-4" />
+                    <CardContent className="flex items-start gap-2.5 p-3">
+                        <div className="rounded-lg bg-emerald-100 p-1.5 text-emerald-700">
+                            <Sparkles className="h-3.5 w-3.5" />
                         </div>
                         <div>
                             <p className="text-xs uppercase tracking-wider text-slate-500">Most Availed Service</p>
@@ -84,27 +84,27 @@ export default function DashboardVisualizations({
                     </CardContent>
                 </Card>
                 <Card className={chartCardClass}>
-                    <CardContent className="flex items-start gap-3 p-4">
-                        <div className="rounded-xl bg-amber-100 p-2 text-amber-700">
-                            <ClipboardCheck className="h-4 w-4" />
+                    <CardContent className="flex items-start gap-2.5 p-3">
+                        <div className="rounded-lg bg-amber-100 p-1.5 text-amber-700">
+                            <ClipboardCheck className="h-3.5 w-3.5" />
                         </div>
                         <div>
                             <p className="text-xs uppercase tracking-wider text-slate-500">Positive SQD (Q0)</p>
-                            <p className="mt-1 text-2xl font-semibold text-slate-900">{positiveSqdRate}</p>
+                            <p className="mt-1 text-xl font-semibold text-slate-900">{positiveSqdRate}</p>
                             <p className="text-xs text-slate-500">Top transaction: {topTransaction?.name || "No data"}</p>
                         </div>
                     </CardContent>
                 </Card>
             </section>
 
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <Card className={chartCardClass}>
                 <CardHeader className="pb-2">
                     <CardTitle className={`flex items-center gap-2 ${chartCardTitleClass}`}>
                         <UserCircle2 className="h-5 w-5 text-sky-600" /> Customers by Gender
                     </CardTitle>
                 </CardHeader>
-                <CardContent className="h-[300px]">
+                <CardContent className="h-[260px] pt-0">
                     <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                             <Pie data={genderData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={5} dataKey="responses" nameKey="name" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
@@ -123,7 +123,7 @@ export default function DashboardVisualizations({
                         <Users className="h-5 w-5 text-cyan-700" /> Age Distribution
                     </CardTitle>
                 </CardHeader>
-                <CardContent className="h-[300px]">
+                <CardContent className="h-[260px] pt-0">
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={ageData}>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -142,7 +142,7 @@ export default function DashboardVisualizations({
                         <Shapes className="h-5 w-5 text-emerald-600" /> Customer Type
                     </CardTitle>
                 </CardHeader>
-                <CardContent className="h-[300px]">
+                <CardContent className="h-[260px] pt-0">
                     <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                             <Pie data={customerTypeData} cx="50%" cy="50%" innerRadius={70} outerRadius={100} paddingAngle={5} dataKey="responses" nameKey="name" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
@@ -161,7 +161,7 @@ export default function DashboardVisualizations({
                         <FileText className="h-5 w-5 text-orange-600" /> Transaction Types
                     </CardTitle>
                 </CardHeader>
-                <CardContent className="h-[300px]">
+                <CardContent className="h-[260px] pt-0">
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={transactionData} layout="vertical" margin={{ left: 30 }}>
                             <CartesianGrid strokeDasharray="3 3" horizontal={false} />
@@ -180,7 +180,7 @@ export default function DashboardVisualizations({
                         <HelpCircle className="h-5 w-5 text-amber-600" /> Nature of Transaction
                     </CardTitle>
                 </CardHeader>
-                <CardContent className="h-[300px]">
+                <CardContent className="h-[260px] pt-0">
                     <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                             <Pie data={natureData} cx="50%" cy="50%" outerRadius={100} dataKey="responses" nameKey="name" label>
@@ -199,7 +199,7 @@ export default function DashboardVisualizations({
                         <TrendingUp className="h-5 w-5 text-teal-600" /> Service Rendered
                     </CardTitle>
                 </CardHeader>
-                <CardContent className="h-[300px]">
+                <CardContent className="h-[260px] pt-0">
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={serviceData} margin={{ left: 20 }}>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -218,8 +218,8 @@ export default function DashboardVisualizations({
                         <Activity className="h-5 w-5 text-sky-600" /> Citizen's Charter
                     </CardTitle>
                 </CardHeader>
-                <CardContent className="flex flex-col gap-6">
-                    <div className="h-[300px] flex flex-col md:flex-row gap-4">
+                <CardContent className="flex flex-col gap-4 pt-0">
+                    <div className="flex h-[260px] flex-col gap-3 md:flex-row">
                         <div className="flex-1 h-full">
                             <h4 className="text-sm font-medium text-center mb-2">CC1: Awareness</h4>
                             <ResponsiveContainer width="100%" height="100%">
@@ -255,7 +255,7 @@ export default function DashboardVisualizations({
                         </div>
                     </div>
                     {/* Custom Text Legend */}
-                    <div className="grid grid-cols-1 gap-6 border-t border-slate-100 pb-2 pt-4 text-xs text-slate-600 md:grid-cols-3">
+                    <div className="grid grid-cols-1 gap-4 border-t border-slate-100 pb-1 pt-3 text-xs text-slate-600 md:grid-cols-3">
                         <div>
                             <p className="font-semibold text-slate-800 mb-2">CC1: Awareness Options</p>
                             <ul className="space-y-2 ml-1 text-xs leading-tight">
@@ -294,7 +294,7 @@ export default function DashboardVisualizations({
                         <CheckCircle2 className="h-5 w-5 text-emerald-600" /> Action Provided
                     </CardTitle>
                 </CardHeader>
-                <CardContent className="h-[400px]">
+                <CardContent className="h-[340px] pt-0">
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={actionData} layout="vertical" margin={{ left: 220 }}>
                             <CartesianGrid strokeDasharray="3 3" horizontal={false} />
@@ -313,7 +313,7 @@ export default function DashboardVisualizations({
                         <TrendingUp className="h-5 w-5 text-orange-600" /> Service Quality Dimensions (SQD)
                     </CardTitle>
                 </CardHeader>
-                <CardContent className="h-[450px]">
+                <CardContent className="h-[380px] pt-0">
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={sqdData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} />

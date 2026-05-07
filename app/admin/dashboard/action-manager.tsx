@@ -87,14 +87,14 @@ function ActionRow({
 
     return (
         <TableRow>
-            <TableCell className="font-medium text-slate-700">{f.controlNumber}</TableCell>
-            <TableCell>{f.name || "Anonymous"}</TableCell>
-            <TableCell className="max-w-[200px] truncate" title={f.citizensCharterService}>
+            <TableCell className="px-2 py-2 text-xs font-medium text-slate-700">{f.controlNumber}</TableCell>
+            <TableCell className="px-2 py-2 text-xs">{f.name || "Anonymous"}</TableCell>
+            <TableCell className="max-w-[180px] truncate px-2 py-2 text-xs" title={f.citizensCharterService}>
                 {f.citizensCharterService || "N/A"}
             </TableCell>
-            <TableCell>
+            <TableCell className="px-2 py-2">
                 <Select value={natureOfTransaction} onValueChange={setNatureOfTransaction} disabled={!isEditing || submittingId === f.id}>
-                    <SelectTrigger className="w-full min-w-[170px] shadow-none h-9 disabled:opacity-100">
+                    <SelectTrigger className="h-8 w-full min-w-[150px] shadow-none disabled:opacity-100">
                         <SelectValue placeholder="Select nature" />
                     </SelectTrigger>
                     <SelectContent>
@@ -103,14 +103,14 @@ function ActionRow({
                     </SelectContent>
                 </Select>
             </TableCell>
-            <TableCell>
+            <TableCell className="px-2 py-2">
                 {localAction === OTHERS_ACTION && isEditing ? (
-                    <div className="flex items-center gap-2 min-w-[250px]">
+                    <div className="flex min-w-[220px] items-center gap-2">
                         <Input
                             value={otherAction}
                             onChange={(e) => setOtherAction(e.target.value)}
                             placeholder="Enter custom action"
-                            className="h-9"
+                            className="h-8 text-xs"
                         />
                         <Button
                             type="button"
@@ -123,12 +123,12 @@ function ActionRow({
                         </Button>
                     </div>
                 ) : localAction === OTHERS_ACTION ? (
-                    <div className="min-w-[250px] rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+                    <div className="min-w-[220px] rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs text-slate-700">
                         {`${OTHERS_ACTION} ${otherAction}`.trim()}
                     </div>
                 ) : (
                     <Select value={localAction} onValueChange={setLocalAction} disabled={!isEditing || submittingId === f.id}>
-                        <SelectTrigger className="w-full min-w-[250px] shadow-none h-9 disabled:opacity-100">
+                        <SelectTrigger className="h-8 w-full min-w-[220px] shadow-none disabled:opacity-100">
                             <SelectValue placeholder="Select an action..." />
                         </SelectTrigger>
                         <SelectContent>
@@ -139,20 +139,20 @@ function ActionRow({
                     </Select>
                 )}
             </TableCell>
-            <TableCell>
+            <TableCell className="px-2 py-2">
                 <Input
                     type="date"
                     value={dateResolved}
                     onChange={(e) => setDateResolved(e.target.value)}
                     disabled={!isEditing || submittingId === f.id}
-                    className="h-9 min-w-[160px] disabled:opacity-100"
+                    className="h-8 min-w-[145px] text-xs disabled:opacity-100"
                 />
             </TableCell>
-            <TableCell className="text-right">
+            <TableCell className="px-2 py-2 text-right">
                 {isEditing ? (
                     <Button
                         size="icon"
-                        className="h-9 w-9 bg-blue-600 text-white hover:bg-blue-700"
+                        className="h-8 w-8 bg-blue-600 text-white hover:bg-blue-700"
                         onClick={handleSave}
                         disabled={submittingId === f.id}
                         title="Save"
@@ -163,7 +163,7 @@ function ActionRow({
                     <Button
                         size="icon"
                         variant="outline"
-                        className="h-9 w-9 border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
+                        className="h-8 w-8 border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
                         onClick={() => setIsEditing(true)}
                         title={isDone ? "Edit saved transaction" : "Edit"}
                     >
@@ -218,25 +218,25 @@ export default function ActionManager({
     };
 
     return (
-        <Card className="mt-6 rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <Card className="mt-4 rounded-xl border border-slate-200 bg-white shadow-sm">
             <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-xl tracking-tight text-slate-900">
-                    <ListTodo className="h-6 w-6 text-cyan-700" />
+                <CardTitle className="flex items-center gap-2 text-lg tracking-tight text-slate-900">
+                    <ListTodo className="h-5 w-5 text-cyan-700" />
                     Manage Actions Provided
                 </CardTitle>
                 <CardDescription>Assign specific actions taken for each feedback entry.</CardDescription>
             </CardHeader>
-            <CardContent className="overflow-x-auto">
+            <CardContent className="overflow-x-auto p-4 pt-0">
                 <Table>
                     <TableHeader className="bg-slate-50/80">
                         <TableRow>
-                            <TableHead>Control No.</TableHead>
-                            <TableHead>Client Name</TableHead>
-                            <TableHead>Service Availed</TableHead>
-                            <TableHead>Nature of Transaction</TableHead>
-                            <TableHead>Action Provided</TableHead>
-                            <TableHead>Date Resolved</TableHead>
-                            <TableHead className="w-24 text-right">Action</TableHead>
+                            <TableHead className="h-9 px-2 text-xs">Control No.</TableHead>
+                            <TableHead className="h-9 px-2 text-xs">Client Name</TableHead>
+                            <TableHead className="h-9 px-2 text-xs">Service Availed</TableHead>
+                            <TableHead className="h-9 px-2 text-xs">Nature of Transaction</TableHead>
+                            <TableHead className="h-9 px-2 text-xs">Action Provided</TableHead>
+                            <TableHead className="h-9 px-2 text-xs">Date Resolved</TableHead>
+                            <TableHead className="h-9 w-20 px-2 text-right text-xs">Action</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -246,13 +246,13 @@ export default function ActionManager({
                     </TableBody>
                 </Table>
             </CardContent>
-            <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50/60 p-4">
-                <span className="text-sm text-slate-500">
+            <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50/60 p-3">
+                <span className="text-xs text-slate-500">
                     Showing {(page - 1) * pageSize + 1} to {Math.min(page * pageSize, feedbackList.length)} of {feedbackList.length} entries
                 </span>
                 <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>Previous</Button>
-                    <Button variant="outline" size="sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages}>Next</Button>
+                    <Button variant="outline" size="sm" className="h-8 px-2 text-xs" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>Previous</Button>
+                    <Button variant="outline" size="sm" className="h-8 px-2 text-xs" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages}>Next</Button>
                 </div>
             </div>
         </Card>
