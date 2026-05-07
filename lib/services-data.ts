@@ -14,14 +14,14 @@ export const servicesData: Record<string, OfficeServices> = {
                 "Accreditation of New Competency Assessors",
                 "Accreditation of Competency Assessment Centers",
                 "Issuance of Certification for Authentication and Verification (CAV) of Scholastic Records",
-                "Issuance of Certified True Copy (CTC) of National Certificate (NC) / Certificate of Competency (CoC)",
+                "Issuance of Certified True Copy (CTC) of National Certificate (NC)/ Certificate of Competency (CoC)",
                 "Issuance of E-Certification (NC/COC)",
                 "Issuance of National TVET Trainer Certificate",
                 "Issuance of NC Plastic Card",
                 "Issuance of Special Order (SO)",
                 "Renewal of Competency Assessor’s Accreditation",
-                "Renewal of National Certificate / Certificate of Competency",
-                "Replacement of Damaged National Certificate / Certificate of Competency",
+                "Renewal of National Certificate/ Certificate of Competency",
+                "Replacement of Damaged National Certificate/Certificate of Competency",
                 "Replacement of Lost National Certificate and Certificate of Competency",
                 "Replacement of National Certificate and Certificate of Competency due to Change of Name",
                 "Replacement of NC/COC due to Erroneous Entry",
@@ -36,7 +36,7 @@ export const servicesData: Record<string, OfficeServices> = {
         },
         "Training": {
             "External Services": [
-                "Conduct of Training Induction Program",
+                "Conduct of Training Induction Program (TIP)",
             ],
         },
         "Scholarship": {
@@ -61,6 +61,7 @@ export const servicesData: Record<string, OfficeServices> = {
                 "Complaints Handling",
                 "Customer Inquiry and Feedback Through Calls",
                 "Customer Inquiry and Feedback Through Calls with concerned Office",
+                "Customer Inquiry and Feedback Through Public Assistance and Complaint Desk",
                 "Customer Inquiry and Feedback Through Public Assistance and Complaint Desk with concerned Office",
                 "Customer Inquiry and Feedback Through SMS and Electronic mails",
                 "Customer Inquiry and Feedback Through SMS and Electronic mails with concerned Office",
@@ -84,7 +85,7 @@ export const servicesData: Record<string, OfficeServices> = {
         "Training": {
             "External Services": [
                 "Application for Training (Diploma Program)",
-                "Conduct of Training Induction Program",
+                "Conduct of Training Induction Program (TIP)",
             ],
         },
         "Scholarship": {
@@ -121,7 +122,7 @@ export const servicesData: Record<string, OfficeServices> = {
         "Training": {
             "External Services": [
                 "Application for Training (Diploma Program)",
-                "Conduct of Training Induction Program",
+                "Conduct of Training Induction Program (TIP)",
             ],
         },
         "Scholarship": {
