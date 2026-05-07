@@ -7,7 +7,7 @@ export async function POST(req: Request) {
         const { clientInfo, ccQuestions, sqd, suggestions } = body
 
         // Helper: generate a control number based on office and month
-        const generateControlNumber = async (office: string): Promise<string> => {
+        const generateControlNumber = async (office: string, formDate?: string): Promise<string> => {
             // Extract abbreviation inside parentheses if present, e.g. "(TESDA PO DS)"
             const abbrevMatch = office.match(/\(([^)]+)\)/)
             const abbrev = abbrevMatch ? abbrevMatch[1].trim() : office.trim()
@@ -24,9 +24,14 @@ export async function POST(req: Request) {
                     break
                 }
             }
-            const now = new Date()
-            const year = now.getFullYear()
-            const month = String(now.getMonth() + 1).padStart(2, "0")
+            // Use the provided form date when available; otherwise fall back to current date.
+            let dateObj = new Date()
+            if (formDate) {
+                const parsed = new Date(formDate)
+                if (!Number.isNaN(parsed.getTime())) dateObj = parsed
+            }
+            const year = dateObj.getFullYear()
+            const month = String(dateObj.getMonth() + 1).padStart(2, "0")
             const base = `${prefix}-${year}-${month}`
 
             // Use DB history instead of Sheets to continue monthly sequence.
@@ -68,7 +73,7 @@ export async function POST(req: Request) {
         }
 
         // Build row data matching required column order (A to AC)
-        const controlNumber = await generateControlNumber(clientInfo.office || "");
+        const controlNumber = await generateControlNumber(clientInfo.office || "", clientInfo.date || "");
         const serviceCategory = getServiceCategory(clientInfo.citizensCharterService || "");
         const formattedOffice = getFormattedOffice(clientInfo.office || "");
         // Clean up the service name by removing " (External)" or " (Internal)" from the end
