@@ -20,6 +20,7 @@ interface SuggestionsSectionProps {
 }
 
 export const SuggestionsSection = memo(function SuggestionsSection({ formData, onChange }: SuggestionsSectionProps) {
+  /*
   const employees = [
     { name: "Althea Kate L. Cobias", position: "Technical Staff" },
     { name: "Zyrah Marie B. Sugui", position: "Technical Staff" },
@@ -45,6 +46,7 @@ export const SuggestionsSection = memo(function SuggestionsSection({ formData, o
       const isCustom = formData.employeeName !== "" && !employees.some((e) => e.name === formData.employeeName)
       setOtherSelected(isCustom)
     }, [formData.employeeName])
+  */
 
   return (
     <Card className="border-0 shadow-sm bg-card">
@@ -84,8 +86,16 @@ export const SuggestionsSection = memo(function SuggestionsSection({ formData, o
           </div>
           <div className="space-y-2">
             <Label htmlFor="employeeName" className="text-sm font-medium text-card-foreground">
-              {"Employee's Full Name"}
+              {"Assisted By:"}
             </Label>
+            <Input
+              id="employeeName"
+              placeholder="Enter employee's full name"
+              value={formData.employeeName}
+              onChange={(e) => onChange("employeeName", e.target.value)}
+              className="bg-background"
+            />
+            {/*
             {otherSelected ? (
               <Input
                 id="employeeName"
@@ -128,6 +138,7 @@ export const SuggestionsSection = memo(function SuggestionsSection({ formData, o
                 </SelectContent>
               </Select>
             )}
+            */}
           </div>
         </div>
       </CardContent>

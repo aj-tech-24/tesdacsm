@@ -241,8 +241,8 @@ export default async function AdminDashboard(props: { searchParams?: Promise<{ [
         return { name: g, responses: matches.length, internal, external, percentage: perc(matches.length), ...officeBreakdown(matches) };
     });
 
-    const inquiries = allFeedback.filter((f) => (f.citizensCharterService || "").toLowerCase().includes("inquiry"));
-    const complaints = allFeedback.filter((f) => (f.citizensCharterService || "").toLowerCase().includes("complaint"));
+    const inquiries = allFeedback.filter((f) => (f.natureOfTransaction || "").toLowerCase().includes("inquiry"));
+    const complaints = allFeedback.filter((f) => (f.natureOfTransaction || "").toLowerCase().includes("complaint"));
     const natureData = [
         { name: "Inquiry", responses: inquiries.length, ...officeBreakdown(inquiries) },
         { name: "Complaint", responses: complaints.length, ...officeBreakdown(complaints) },

@@ -7,24 +7,24 @@ import Link from "next/link"
 const offices = [
     {
         id: "po-ds",
-        title: "Provincial District Office",
-        subtitle: "(TESDA PO DS)",
+        title: "TESDA DAVAO DEL SUR PROVINCIAL OFFICE",
+        subtitle: "",
         emoji: "🏛️",
         color: "from-blue-400 to-blue-600",
         shadow: "shadow-blue-500/30",
     },
     {
         id: "ccnts",
-        title: "Administered School",
-        subtitle: "(CCNTS)",
+        title: "CARMELO C. DELOS CIENTOS SR. NATIONAL TRADE SCHOOL ",
+        subtitle: "",
         emoji: "🎓",
         color: "from-indigo-400 to-indigo-600",
         shadow: "shadow-indigo-500/30",
     },
     {
         id: "ptc-ds",
-        title: "Training Centers",
-        subtitle: "(PTC - DS)",
+        title: "PROVINCIAL TRAINING CENTERS - DAVAO DEL SUR",
+        subtitle: "",
         emoji: "🏢",
         color: "from-sky-400 to-sky-600",
         shadow: "shadow-sky-500/30",
@@ -87,7 +87,7 @@ export function OfficeSelection({ onSelect }: { onSelect: (office: string) => vo
                                     </div>
 
                                     {/* Text Content */}
-                                    <h3 className="text-lg font-bold text-slate-800 mb-1 leading-tight group-hover:text-blue-700 transition-colors">
+                                    <h3 className="text-sm font-bold text-slate-800 mb-1 leading-tight group-hover:text-blue-700 transition-colors">
                                         {office.title}
                                     </h3>
                                     <p className="text-xs md:text-sm font-semibold text-slate-500 mb-5">
