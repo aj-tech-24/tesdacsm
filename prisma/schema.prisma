@@ -8,7 +8,12 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  url      = env("DATABASE_URL")
+  // When targeting the Turso libsql endpoint, set the connection string in
+  // the TURSO_DATABASE_URL environment variable. For local development the
+  // DATABASE_URL (file:./dev.db) will be used. You can override the target
+  // at runtime when running Prisma commands by setting DATABASE_URL or using
+  // the --url flag.
+  url      = env("TURSO_DATABASE_URL")
 }
 
 model User {
@@ -57,6 +62,23 @@ model Feedback {
   actionProvided         String?
   dateResolved           String?
   natureOfTransaction    String?
+
+  notification           Notification?
+}
+
+model Notification {
+  id                Int      @id @default(autoincrement())
+  createdAt         DateTime @default(now())
+  readAt            DateTime?
+  level             String   @default("warning")
+  title             String
+  message           String
+  controlNumber     String
+  office            String?
+  service           String?
+  lowestRating      Int?
+  feedbackId        Int      @unique
+  feedback          Feedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
 }
 
 model Analysis {

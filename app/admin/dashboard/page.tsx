@@ -117,6 +117,33 @@ export default async function AdminDashboard(props: { searchParams?: Promise<{ [
 
     // Keep raw/report tabs in sync with dashboard filters (period + role scope).
     const allFeedbackRaw = [...allFeedback];
+    const feedbackIds = allFeedbackRaw.map((feedback) => feedback.id);
+    
+    let notifications: any[] = [];
+    try {
+        const notificationRows = await prisma.$queryRawUnsafe<Array<{
+            id: number;
+            createdAt: string | Date;
+            readAt: string | Date | null;
+            level: string;
+            title: string;
+            message: string;
+            controlNumber: string;
+            office: string | null;
+            service: string | null;
+            lowestRating: number | null;
+            feedbackId: number;
+            clientName: string | null;
+        }>>(
+            `SELECT n.id, n.createdAt, n.readAt, n.level, n.title, n.message, n.controlNumber, n.office, n.service, n.lowestRating, n.feedbackId, f.name as clientName FROM "Notification" n LEFT JOIN "Feedback" f ON n.feedbackId = f.id ORDER BY n.createdAt DESC LIMIT 20`
+        );
+        const notificationIdSet = new Set(feedbackIds.map((id) => Number(id)));
+        notifications = notificationRows.filter((notification) => notificationIdSet.has(Number(notification.feedbackId)));
+    } catch (notificationError) {
+        // If Notification table doesn't exist or query fails, continue with empty notifications
+        console.error("Failed to load notifications (table may not exist yet):", notificationError);
+        notifications = [];
+    }
 
     const totalResponses = allFeedback.length;
     const perc = (n: number) => totalResponses > 0 ? ((n / totalResponses) * 100).toFixed(2) + "%" : "0%";
@@ -363,6 +390,12 @@ export default async function AdminDashboard(props: { searchParams?: Promise<{ [
                     actionData={actionData}
                     sqdResults={sqdResults}
                     sqdOfficeData={sqdOfficeData}
+                    initialNotifications={notifications.map((notification) => ({
+                        ...notification,
+                        createdAt: new Date(notification.createdAt).toISOString(),
+                        readAt: notification.readAt ? new Date(notification.readAt).toISOString() : null,
+                    }))}
+                    initialUnreadCount={notifications.filter((notification: { readAt: string | Date | null }) => !notification.readAt).length}
                     initialAnalysis={initialAnalysis}
                 />
             </main>

@@ -79,6 +79,15 @@ export async function POST(req: Request) {
         // Clean up the service name by removing " (External)" or " (Internal)" from the end
         const cleanService = (clientInfo.citizensCharterService || "").replace(/\s*\((External|Internal)\)$/i, "").trim()
 
+        const sqdEntries = Object.entries(sqd)
+            .map(([key, value]) => ({ key, rating: Number.parseInt(String(value), 10) }))
+            .filter(({ key, rating }) => key.startsWith("sqd") && Number.isInteger(rating) && rating >= 1 && rating <= 5)
+        const lowestRating = sqdEntries.reduce<number | null>((currentLowest, entry) => {
+            if (currentLowest === null) return entry.rating
+            return Math.min(currentLowest, entry.rating)
+        }, null)
+        const lowRatingFields = sqdEntries.filter((entry) => entry.rating <= 2).map((entry) => `${entry.key.toUpperCase()}: ${entry.rating}`)
+
         // 4. Save to local SQLite database via Prisma
         const feedbackEntry = await prisma.feedback.create({
             data: {
@@ -112,6 +121,29 @@ export async function POST(req: Request) {
                 suggestions: suggestions.suggestions || null,
             }
         });
+
+        if (lowestRating !== null && lowestRating <= 2) {
+            try {
+                const lowScoreSummary = lowRatingFields.length > 0
+                    ? lowRatingFields.join(", ")
+                    : `Lowest SQD score: ${lowestRating}`
+
+                await prisma.$executeRawUnsafe(
+                    `INSERT INTO "Notification" ("readAt", "level", "title", "message", "controlNumber", "office", "service", "lowestRating", "feedbackId") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    null,
+                    "warning",
+                    "Low rating alert",
+                    `${controlNumber} received a low customer rating for ${cleanService || "a service"}. ${lowScoreSummary}.`,
+                    controlNumber,
+                    formattedOffice,
+                    cleanService || null,
+                    lowestRating,
+                    feedbackEntry.id,
+                )
+            } catch (notificationError) {
+                console.error("Failed to create low rating notification:", notificationError)
+            }
+        }
 
         return NextResponse.json({
             success: true,

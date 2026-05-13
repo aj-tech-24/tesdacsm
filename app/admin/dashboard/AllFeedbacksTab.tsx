@@ -459,7 +459,7 @@ export default function AllFeedbacksTab({ feedbackList, reportPeriodLabel }: { f
                     </TableHeader>
                     <TableBody>
                         {paginatedRows.map((row) => (
-                            <TableRow key={row.id}>
+                            <TableRow key={row.id} data-feedback-id={row.id}>
                                 <TableCell className="px-2 py-2 text-xs">{row.controlNumber || ""}</TableCell>
                                 <TableCell className="px-2 py-2 text-xs">{row.name || "Anonymous"}</TableCell>
                                 <TableCell className="px-2 py-2 text-xs">{formatDateForDisplay(row.formDate)}</TableCell>

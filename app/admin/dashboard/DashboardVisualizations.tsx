@@ -56,6 +56,9 @@ export default function DashboardVisualizations({
     const positiveSqdCount = Number(sqd0["Strongly Agree"] || 0) + Number(sqd0["Agree"] || 0);
     const positiveSqdRate = totalResponses > 0 ? `${((positiveSqdCount / totalResponses) * 100).toFixed(1)}%` : "0.0%";
 
+    const filteredServiceData = serviceData.filter(d => Number(d.responses) > 0);
+    const serviceChartHeight = Math.max(300, filteredServiceData.length * 40);
+
     return (
         <div className="w-full space-y-4 pb-8">
             <section className="grid grid-cols-1 gap-2.5 md:grid-cols-3">
@@ -199,16 +202,18 @@ export default function DashboardVisualizations({
                         <TrendingUp className="h-5 w-5 text-teal-600" /> Service Rendered
                     </CardTitle>
                 </CardHeader>
-                <CardContent className="h-[260px] pt-0">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={serviceData} margin={{ left: 20 }}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                            <XAxis dataKey="name" tick={{ fontSize: 10 }} angle={-45} textAnchor="end" height={60} />
-                            <YAxis />
-                            <Tooltip />
-                            <Bar dataKey="responses" fill="#0d9488" radius={[6, 6, 0, 0]} />
-                        </BarChart>
-                    </ResponsiveContainer>
+                <CardContent className="h-[400px] overflow-y-auto overflow-x-hidden px-1 pt-0 custom-scrollbar">
+                    <div style={{ height: `${serviceChartHeight}px`, width: '100%' }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={filteredServiceData} layout="vertical" margin={{ left: 10, right: 30 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                <XAxis type="number" />
+                                <YAxis type="category" dataKey="name" width={150} tick={{ fontSize: 10 }} interval={0} />
+                                <Tooltip />
+                                <Bar dataKey="responses" fill="#0d9488" radius={[0, 6, 6, 0]} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
                 </CardContent>
             </Card>
 

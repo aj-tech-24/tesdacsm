@@ -67,19 +67,25 @@ export const buildClientFeedbackPrintHtml = (
   const tx = snapshot.clientInfo.transactionTypes.map((t) => t.toLowerCase())
   const txHas = (label: string) => tx.some((item) => item.includes(label.toLowerCase()))
 
-  const cc1Selected = snapshot.ccQuestions.cc1 || ""
-  const cc2Selected = snapshot.ccQuestions.cc2 || ""
-  const cc3Selected = snapshot.ccQuestions.cc3 || ""
+  const cc1Selected = String(snapshot.ccQuestions.cc1 || "").toLowerCase()
+  const cc2Selected = String(snapshot.ccQuestions.cc2 || "").toLowerCase()
+  const cc3Selected = String(snapshot.ccQuestions.cc3 || "").toLowerCase()
+
+  const isNAValue = (v: string) => {
+    if (!v) return false
+    const nv = v.trim().toLowerCase()
+    return nv === "na" || nv === "n/a"
+  }
 
   const originMatch = logoUrl.match(/^https?:\/\/[^/]+/)
   const assetBase = originMatch ? originMatch[0] : ""
 
   const sqdScaleColumns = [
-    { key: "1", label: "Strongly Disagree", icon: `${assetBase}/SQD/strong%20disagree.png` },
-    { key: "2", label: "Disagree", icon: `${assetBase}/SQD/disagree.png` },
-    { key: "3", label: "Neither Agree nor Disagree", icon: `${assetBase}/SQD/neutral.png` },
-    { key: "4", label: "Agree", icon: `${assetBase}/SQD/agree.png` },
-    { key: "5", label: "Strongly Agree", icon: `${assetBase}/SQD/strong%20agree.png` },
+    { key: "1", label: "Strongly Disagree", icon: `${assetBase}/SQD/${encodeURIComponent("strong disagree")}.png` },
+    { key: "2", label: "Disagree", icon: `${assetBase}/SQD/${encodeURIComponent("disagree")}.png` },
+    { key: "3", label: "Neither Agree nor Disagree", icon: `${assetBase}/SQD/${encodeURIComponent("neutral")}.png` },
+    { key: "4", label: "Agree", icon: `${assetBase}/SQD/${encodeURIComponent("agree")}.png` },
+    { key: "5", label: "Strongly Agree", icon: `${assetBase}/SQD/${encodeURIComponent("strong agree")}.png` },
     { key: "na", label: "Not Applicable", icon: "" },
   ]
 
@@ -114,24 +120,26 @@ export const buildClientFeedbackPrintHtml = (
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>CSM Client Feedback Copy</title>
+    <title></title>
     <style>
       * { box-sizing: border-box; }
+      html, body { font-size: 12px; }
       body {
-        margin: .5in;
-        padding: 12px;
+        margin: 6mm 2mm;
+        padding: 8px;
         color: #111827;
         font-family: Arial, Helvetica, sans-serif;
         background: #fff;
+        line-height: 1.08;
       }
       .sheet {
-        max-width: 780px;
+        max-width: 760px;
         margin: 0 auto;
-        padding: 10px 14px;
+        padding: 8px 10px;
         border: 1px solid #d1d5db;
       }
       .topline {
-        font-size: 13px;
+        font-size: 12px;
         margin-bottom: 2px;
       }
       .logo-wrap {
@@ -139,45 +147,48 @@ export const buildClientFeedbackPrintHtml = (
         margin-top: 2px;
       }
       .logo {
-        width: 58px;
-        height: 58px;
+        width: 48px;
+        height: 48px;
       }
       .agency {
         text-align: center;
-        font-size: 16px;
+        font-size: 14px;
         font-weight: 700;
         margin-top: 2px;
       }
       .agency-small {
         text-align: center;
-        font-size: 12px;
+        font-size: 11px;
         margin-top: 1px;
       }
       .notice {
-        font-size: 11px;
-        line-height: 1.3;
-        margin: 10px 0;
+        font-size: 10.5px;
+        line-height: 1.15;
+        margin: 8px 0;
       }
       .line-row {
         display: grid;
-        grid-template-columns: auto 1fr auto 1fr auto 80px;
-        gap: 6px;
+        grid-template-columns: auto 1fr auto 1fr auto 70px;
+        gap: 5px;
         font-size: 11px;
-        margin-bottom: 6px;
+        margin-bottom: 4px;
         align-items: end;
       }
       .line-row-2 {
         display: grid;
         grid-template-columns: auto 1fr auto 1.2fr;
-        gap: 6px;
+        gap: 5px;
         font-size: 11px;
-        margin-bottom: 6px;
+        margin-bottom: 4px;
         align-items: end;
+      }
+      .line-row-region {
+        grid-template-columns: auto 0.7fr auto 1.3fr;
       }
       .line-row-3 {
         display: grid;
         grid-template-columns: auto 1fr;
-        gap: 6px;
+        gap: 5px;
         font-size: 11px;
         margin-bottom: 2px;
         align-items: start;
@@ -188,13 +199,13 @@ export const buildClientFeedbackPrintHtml = (
       }
       .fill {
         border-bottom: 1px solid #111827;
-        min-height: 14px;
+        min-height: 12px;
         padding: 0 2px 1px;
         font-size: 11px;
       }
       .checks {
         font-size: 11px;
-        margin-bottom: 6px;
+        margin-bottom: 5px;
       }
       .checks .box {
         display: inline-block;
@@ -204,7 +215,7 @@ export const buildClientFeedbackPrintHtml = (
         text-align: center;
         line-height: 10px;
         margin: 0 3px 0 6px;
-        font-size: 10px;
+        font-size: 11px;
         vertical-align: middle;
       }
       .line-row-3 .checks {
@@ -214,12 +225,12 @@ export const buildClientFeedbackPrintHtml = (
         margin-left: 0;
       }
       .section-title {
-        font-size: 11px;
+        font-size: 12px;
         margin: 10px 0 4px;
       }
       .cc-block {
         font-size: 11px;
-        margin-bottom: 7px;
+        margin-bottom: 6px;
       }
       .cc-head {
         display: grid;
@@ -237,7 +248,7 @@ export const buildClientFeedbackPrintHtml = (
         width: 100%;
         border-collapse: collapse;
         font-size: 10px;
-        margin-top: 6px;
+        margin-top: 4px;
       }
       .sqd-table th,
       .sqd-table td {
@@ -245,7 +256,7 @@ export const buildClientFeedbackPrintHtml = (
         vertical-align: top;
       }
       .sqd-table td {
-        padding: 4px;
+        padding: 3px;
       }
       .sqd-table th {
         padding: 2px 1px;
@@ -255,7 +266,7 @@ export const buildClientFeedbackPrintHtml = (
       }
       .sqd-head-wrap {
         display: grid;
-        grid-template-rows: 42px auto;
+        grid-template-rows: 34px auto;
         align-items: start;
         justify-items: center;
         row-gap: 2px;
@@ -265,8 +276,8 @@ export const buildClientFeedbackPrintHtml = (
         margin: 0;
       }
       .sqd-head-icon {
-        width: 42px;
-        height: 42px;
+        width: 34px;
+        height: 34px;
         object-fit: contain;
         display: block;
       }
@@ -276,18 +287,18 @@ export const buildClientFeedbackPrintHtml = (
         display: block;
       }
       .sqd-question {
-        width: 41%;
+        width: 40%;
         font-size: 10px;
       }
       .sqd-cell {
-        width: 9.8%;
+        width: 9.5%;
         text-align: center;
         font-size: 12px;
         font-weight: 700;
         vertical-align: middle;
       }
       .footer-line {
-        margin-top: 10px;
+        margin-top: 8px;
         font-size: 11px;
       }
       .thank {
@@ -296,7 +307,24 @@ export const buildClientFeedbackPrintHtml = (
         margin-top: 6px;
       }
       @media print {
-        @page { size: A4 portrait; margin: 8mm; }
+        @page { size: A4 portrait; margin: 10mm 20mm; }
+        body { margin: 0; padding: 0; }
+        .sheet {
+          border: 0;
+          max-width: none;
+          padding: 6mm;
+          margin: 0;
+        }
+        .logo { width: 44px; height: 44px; }
+        .sqd-head-wrap { grid-template-rows: 32px auto; }
+        .sqd-head-icon { width: 32px; height: 32px; }
+        .sqd-question { font-size: 9.8px; }
+        .sqd-table { font-size: 9.8px; }
+        .fill, .checks, .cc-block, .line-row, .line-row-2, .line-row-3 { font-size: 10px; }
+        .sheet { page-break-inside: avoid; }
+      }
+      @media print {
+        @page { size: A4 portrait; margin: 10mm 20mm; }
         body { padding: 0; }
         .sheet {
           border: 0;
@@ -336,7 +364,7 @@ export const buildClientFeedbackPrintHtml = (
         <div>Age: <span class="fill">${escapeHtml(snapshot.clientInfo.age || "")}</span></div>
       </div>
 
-      <div class="line-row-2">
+      <div class="line-row-2 line-row-region">
         <div>Region of residence:</div>
         <div class="fill">${escapeHtml(snapshot.clientInfo.regionOfResidence || "")}</div>
         <div>Citizens Charter Service Availed:</div>
@@ -375,7 +403,7 @@ export const buildClientFeedbackPrintHtml = (
           <div>${ccMark(cc2Selected === "2")} 2. Somewhat easy to see</div>
           <div>${ccMark(cc2Selected === "3")} 3. Difficult to see</div>
           <div>${ccMark(cc2Selected === "4")} 4. Not visible at all</div>
-          <div>${ccMark(cc2Selected === "5" || cc2Selected.toUpperCase() === "N/A")} 5. N/A</div>
+          <div>${ccMark(cc2Selected === "5" || isNAValue(cc2Selected))} 5. N/A</div>
         </div>
       </div>
 
@@ -385,7 +413,7 @@ export const buildClientFeedbackPrintHtml = (
           <div>${ccMark(cc3Selected === "1")} 1. Helped very much</div>
           <div>${ccMark(cc3Selected === "2")} 2. Somewhat helped</div>
           <div>${ccMark(cc3Selected === "3")} 3. Did not help</div>
-          <div>${ccMark(cc3Selected === "4" || cc3Selected.toUpperCase() === "N/A")} 4. N/A</div>
+          <div>${ccMark(cc3Selected === "4" || isNAValue(cc3Selected))} 4. N/A</div>
         </div>
       </div>
 
