@@ -437,20 +437,20 @@ export default function AllFeedbacksTab({ feedbackList, reportPeriodLabel }: { f
                 <Table>
                     <TableHeader className="bg-slate-50/80">
                         <TableRow>
-                            <TableHead className="h-9 px-2 text-xs">Control No.</TableHead>
-                            <TableHead className="h-9 px-2 text-xs">Client Name</TableHead>
                             <TableHead className="h-9 px-2 text-xs">
                                 <button
                                     type="button"
                                     onClick={() => setFormDateSort((prev) => (prev === "asc" ? "desc" : "asc"))}
                                     className="inline-flex items-center gap-1 text-xs font-medium text-slate-700 hover:text-slate-900"
-                                    aria-label={`Sort Form Date ${formDateSort === "asc" ? "descending" : "ascending"}`}
-                                    title={`Sort by Form Date (${formDateSort === "asc" ? "oldest first" : "newest first"})`}
+                                    aria-label={`Sort Feedback Date ${formDateSort === "asc" ? "descending" : "ascending"}`}
+                                    title={`Sort by Feedback Date (${formDateSort === "asc" ? "oldest first" : "newest first"})`}
                                 >
-                                    Form Date
+                                    Feedback Date
                                     <ArrowUpDown className="h-3.5 w-3.5" />
                                 </button>
                             </TableHead>
+                            <TableHead className="h-9 px-2 text-xs">Control No.</TableHead>
+                            <TableHead className="h-9 px-2 text-xs">Client Name</TableHead>
                             <TableHead className="h-9 px-2 text-xs">Office</TableHead>
                             <TableHead className="h-9 px-2 text-xs">Service</TableHead>
                             <TableHead className="h-9 px-2 text-xs">Action Provided</TableHead>
@@ -460,9 +460,9 @@ export default function AllFeedbacksTab({ feedbackList, reportPeriodLabel }: { f
                     <TableBody>
                         {paginatedRows.map((row) => (
                             <TableRow key={row.id} data-feedback-id={row.id}>
+                                <TableCell className="px-2 py-2 text-xs">{formatDateForDisplay(row.formDate)}</TableCell>
                                 <TableCell className="px-2 py-2 text-xs">{row.controlNumber || ""}</TableCell>
                                 <TableCell className="px-2 py-2 text-xs">{row.name || "Anonymous"}</TableCell>
-                                <TableCell className="px-2 py-2 text-xs">{formatDateForDisplay(row.formDate)}</TableCell>
                                 <TableCell className="px-2 py-2 text-xs">{row.office || ""}</TableCell>
                                 <TableCell className="max-w-[220px] truncate px-2 py-2 text-xs" title={row.citizensCharterService || ""}>
                                     {row.citizensCharterService || ""}
@@ -579,7 +579,7 @@ export default function AllFeedbacksTab({ feedbackList, reportPeriodLabel }: { f
                                     <Input value={editForm.age} onChange={(e) => setEditForm((prev) => ({ ...prev, age: e.target.value }))} disabled={isSavingEdit} />
                                 </div>
                                 <div className="grid gap-1.5">
-                                    <p className="text-sm font-medium text-slate-700">Form Date</p>
+                                    <p className="text-sm font-medium text-slate-700">Feedback Date</p>
                                     <Input type="date" value={editForm.formDate} onChange={(e) => setEditForm((prev) => ({ ...prev, formDate: e.target.value }))} disabled={isSavingEdit} />
                                 </div>
                                 <div className="grid gap-1.5">
