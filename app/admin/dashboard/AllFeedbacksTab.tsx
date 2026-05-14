@@ -85,6 +85,12 @@ const normalizeTransactionType = (value: unknown) => {
 };
 
 const normalizeDateForInput = (value: unknown) => {
+    if (value instanceof Date) {
+        const y = value.getFullYear();
+        const m = String(value.getMonth() + 1).padStart(2, "0");
+        const d = String(value.getDate()).padStart(2, "0");
+        return `${y}-${m}-${d}`;
+    }
     const raw = asText(value).trim();
     if (!raw) return "";
 
@@ -93,7 +99,11 @@ const normalizeDateForInput = (value: unknown) => {
 
     const parsed = new Date(raw);
     if (Number.isNaN(parsed.getTime())) return "";
-    return parsed.toISOString().slice(0, 10);
+    
+    const y = parsed.getFullYear();
+    const m = String(parsed.getMonth() + 1).padStart(2, "0");
+    const d = String(parsed.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
 };
 
 const formatDateForDisplay = (value: unknown) => {

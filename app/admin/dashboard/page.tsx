@@ -6,6 +6,12 @@ import { getSession } from "@/lib/session";
 export const dynamic = "force-dynamic";
 
 const normalizeFormDate = (value: unknown) => {
+    if (value instanceof Date) {
+        const y = value.getFullYear();
+        const m = String(value.getMonth() + 1).padStart(2, "0");
+        const d = String(value.getDate()).padStart(2, "0");
+        return `${y}-${m}-${d}`;
+    }
     const raw = String(value ?? "").trim();
     if (!raw) return null;
 
@@ -13,7 +19,12 @@ const normalizeFormDate = (value: unknown) => {
 
     const parsed = new Date(raw);
     if (Number.isNaN(parsed.getTime())) return null;
-    return parsed.toISOString().slice(0, 10);
+    
+    // For string parsing, extract components to stay in "local" context
+    const y = parsed.getFullYear();
+    const m = String(parsed.getMonth() + 1).padStart(2, "0");
+    const d = String(parsed.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
 };
 
 const isWithinPeriod = (formDate: unknown, year: number, month?: number | null) => {
@@ -67,12 +78,20 @@ export default async function AdminDashboard(props: { searchParams?: Promise<{ [
         orderBy: { createdAt: "desc" }
     });
 
-    if (hasSpecificYear) {
-        const year = parseInt(yearStr, 10);
-        const month = monthStr && monthStr !== "all" ? parseInt(monthStr, 10) : null;
-        if (!Number.isNaN(year)) {
-            allFeedback = allFeedback.filter((feedback) => isWithinPeriod(feedback.formDate, year, Number.isNaN(month as number) ? null : month));
-        }
+    const hasMonthFilter = !!monthStr && monthStr !== "all";
+
+    if (hasSpecificYear || hasMonthFilter) {
+        const year = hasSpecificYear ? parseInt(yearStr, 10) : null;
+        const month = hasMonthFilter ? parseInt(monthStr, 10) : null;
+
+        allFeedback = allFeedback.filter((feedback) => {
+            const normalized = normalizeFormDate(feedback.formDate);
+            if (!normalized) return false;
+            const [dateYear, dateMonth] = normalized.split("-").map((p) => parseInt(p, 10));
+            if (hasSpecificYear && !Number.isNaN(year) && dateYear !== year) return false;
+            if (hasMonthFilter && !Number.isNaN(month) && dateMonth !== month) return false;
+            return true;
+        });
     }
 
     // Role-based filtering: office admins only see their own office data

@@ -88,11 +88,11 @@ function ActionRow({
     return (
         <TableRow>
             <TableCell className="px-2 py-2 text-xs text-slate-600">
-                {f.createdAt ? new Date(f.createdAt).toLocaleDateString("en-PH", { year: "numeric", month: "short", day: "numeric" }) : "N/A"}
+                {f.formDate ? new Date(f.formDate).toLocaleDateString("en-PH", { year: "numeric", month: "short", day: "numeric" }) : "N/A"}
             </TableCell>
             <TableCell className="px-2 py-2 text-xs font-medium text-slate-700">{f.controlNumber}</TableCell>
             <TableCell className="px-2 py-2 text-xs">{f.name || "Anonymous"}</TableCell>
-            <TableCell className="max-w-[180px] truncate px-2 py-2 text-xs" title={f.citizensCharterService}>
+            <TableCell className="max-w-[260px] truncate px-2 py-2 text-xs" title={f.citizensCharterService}>
                 {f.citizensCharterService || "N/A"}
             </TableCell>
             <TableCell className="px-2 py-2">
@@ -106,14 +106,14 @@ function ActionRow({
                     </SelectContent>
                 </Select>
             </TableCell>
-            <TableCell className="px-2 py-2">
+            <TableCell className="max-w-[160px] overflow-hidden px-2 py-2">
                 {localAction === OTHERS_ACTION && isEditing ? (
-                    <div className="flex min-w-[220px] items-center gap-2">
+                    <div className="flex min-w-[60px] items-center gap-2">
                         <Input
                             value={otherAction}
                             onChange={(e) => setOtherAction(e.target.value)}
                             placeholder="Enter custom action"
-                            className="h-8 text-xs"
+                            className="h-8 w-[60px] text-xs"
                         />
                         <Button
                             type="button"
@@ -126,12 +126,12 @@ function ActionRow({
                         </Button>
                     </div>
                 ) : localAction === OTHERS_ACTION ? (
-                    <div className="min-w-[220px] rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs text-slate-700">
+                    <div className="min-w-[60px] rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs text-slate-700">
                         {`${OTHERS_ACTION} ${otherAction}`.trim()}
                     </div>
                 ) : (
                     <Select value={localAction} onValueChange={setLocalAction} disabled={!isEditing || submittingId === f.id}>
-                        <SelectTrigger className="h-8 w-full min-w-[220px] shadow-none disabled:opacity-100">
+                        <SelectTrigger className="h-8 w-[160px] max-w-full shadow-none disabled:opacity-100">
                             <SelectValue placeholder="Select an action..." />
                         </SelectTrigger>
                         <SelectContent>
@@ -236,9 +236,9 @@ export default function ActionManager({
                             <TableHead className="h-9 px-2 text-xs">Feedback Date</TableHead>
                             <TableHead className="h-9 px-2 text-xs">Control No.</TableHead>
                             <TableHead className="h-9 px-2 text-xs">Client Name</TableHead>
-                            <TableHead className="h-9 px-2 text-xs">Service Availed</TableHead>
+                            <TableHead className="h-9 w-64 px-2 text-xs">Service Availed</TableHead>
                             <TableHead className="h-9 px-2 text-xs">Nature of Transaction</TableHead>
-                            <TableHead className="h-9 px-2 text-xs">Action Provided</TableHead>
+                            <TableHead className="h-9 w-40 px-2 text-xs">Action Provided</TableHead>
                             <TableHead className="h-9 px-2 text-xs">Date Resolved</TableHead>
                             <TableHead className="h-9 w-20 px-2 text-right text-xs">Action</TableHead>
                         </TableRow>
