@@ -87,6 +87,9 @@ function ActionRow({
 
     return (
         <TableRow>
+            <TableCell className="px-2 py-2 text-xs text-slate-600">
+                {f.createdAt ? new Date(f.createdAt).toLocaleDateString("en-PH", { year: "numeric", month: "short", day: "numeric" }) : "N/A"}
+            </TableCell>
             <TableCell className="px-2 py-2 text-xs font-medium text-slate-700">{f.controlNumber}</TableCell>
             <TableCell className="px-2 py-2 text-xs">{f.name || "Anonymous"}</TableCell>
             <TableCell className="max-w-[180px] truncate px-2 py-2 text-xs" title={f.citizensCharterService}>
@@ -230,6 +233,7 @@ export default function ActionManager({
                 <Table>
                     <TableHeader className="bg-slate-50/80">
                         <TableRow>
+                            <TableHead className="h-9 px-2 text-xs">Feedback Date</TableHead>
                             <TableHead className="h-9 px-2 text-xs">Control No.</TableHead>
                             <TableHead className="h-9 px-2 text-xs">Client Name</TableHead>
                             <TableHead className="h-9 px-2 text-xs">Service Availed</TableHead>
