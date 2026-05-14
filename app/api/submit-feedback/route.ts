@@ -90,7 +90,7 @@ export async function POST(req: Request) {
                 .map((row) => Number(row.controlNumber.split("-").pop()))
                 .filter((num) => !Number.isNaN(num))
             const nextSeq = seqNumbers.length > 0 ? Math.max(...seqNumbers) + 1 : 1
-            return `${base}-${String(nextSeq).padStart(3, "0")}`
+            return `${base}-${String(nextSeq).padStart(4, "0")}`
         }
 
         // Helper: determine External / Internal based on service name
