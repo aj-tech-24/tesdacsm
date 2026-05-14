@@ -6,30 +6,70 @@ export async function POST(req: Request) {
         const body = await req.json()
         const { clientInfo, ccQuestions, sqd, suggestions } = body
 
+        const resolveOfficeKey = (office: string): "TESDA PO DS" | "CCNTS" | "PTC - DS" | "" => {
+            const normalized = office.toUpperCase().replace(/\s+/g, " ").trim()
+
+            if (
+                normalized.includes("TESDA PO DS") ||
+                normalized.includes("DAVAO DEL SUR PROVINCIAL OFFICE") ||
+                normalized.includes("PROVINCIAL OFFICE")
+            ) {
+                return "TESDA PO DS"
+            }
+
+            if (
+                normalized.includes("CCNTS") ||
+                normalized.includes("CARMELO C. DELOS CIENTOS") ||
+                normalized.includes("NATIONAL TRADE SCHOOL")
+            ) {
+                return "CCNTS"
+            }
+
+            if (
+                normalized.includes("PTC - DS") ||
+                normalized.includes("PTCDDS") ||
+                normalized.includes("PROVINCIAL TRAINING CENTERS")
+            ) {
+                return "PTC - DS"
+            }
+
+            return ""
+        }
+
         // Helper: generate a control number based on office and month
+        /**
+         * Generates a control number using the format: PREFIX-YEAR-MONTH-SEQUENCE
+         * @param office - Office name (may contain abbreviation in parentheses)
+         * @param formDate - Form submission date (ISO string or valid date format). Uses current date if invalid or omitted.
+         * @returns Promise<string> - Control number string
+         */
         const generateControlNumber = async (office: string, formDate?: string): Promise<string> => {
-            // Extract abbreviation inside parentheses if present, e.g. "(TESDA PO DS)"
-            const abbrevMatch = office.match(/\(([^)]+)\)/)
-            const abbrev = abbrevMatch ? abbrevMatch[1].trim() : office.trim()
+            const officeKey = resolveOfficeKey(office)
             const prefixMap: Record<string, string> = {
                 "TESDA PO DS": "PO",
                 "CCNTS": "CCNTS",
                 "PTC - DS": "PTCDDS",
             }
-            // Find matching prefix (case‑insensitive)
-            let prefix = "UNK"
-            for (const key in prefixMap) {
-                if (abbrev.toUpperCase().includes(key.toUpperCase())) {
-                    prefix = prefixMap[key]
-                    break
+            const prefix = officeKey ? prefixMap[officeKey] : "UNK"
+            
+            // Use the provided form date when available; otherwise fall back to current date
+            let dateObj = new Date()
+            let usedProvidedDate = false
+            
+            if (formDate && formDate.trim()) {
+                const parsed = new Date(formDate)
+                if (!Number.isNaN(parsed.getTime())) {
+                    dateObj = parsed
+                    usedProvidedDate = true
+                } else {
+                    console.warn(`Invalid form date provided: "${formDate}". Using current date for control number.`)
                 }
             }
-            // Use the provided form date when available; otherwise fall back to current date.
-            let dateObj = new Date()
-            if (formDate) {
-                const parsed = new Date(formDate)
-                if (!Number.isNaN(parsed.getTime())) dateObj = parsed
+            
+            if (!usedProvidedDate && formDate) {
+                console.info(`No form date or invalid format. Using current date (${dateObj.toISOString()}) for control number.`)
             }
+            
             const year = dateObj.getFullYear()
             const month = String(dateObj.getMonth() + 1).padStart(2, "0")
             const base = `${prefix}-${year}-${month}`
@@ -62,12 +102,11 @@ export async function POST(req: Request) {
 
         // Helper: format office string for the spreadsheet output
         const getFormattedOffice = (office: string): string => {
-            const abbrevMatch = office.match(/\(([^)]+)\)/)
-            const abbrev = abbrevMatch ? abbrevMatch[1].trim().toUpperCase() : office.trim().toUpperCase()
+            const officeKey = resolveOfficeKey(office)
 
-            if (abbrev.includes("CCNTS")) return "Region XI/TESDA CCNTS"
-            if (abbrev.includes("PO")) return "REGION XI/PROVINICAL OFFICE"
-            if (abbrev.includes("PTCDDS") || abbrev.includes("PTC - DS")) return "REGION XI / PTC-DAVAO DEL SUR"
+            if (officeKey === "CCNTS") return "Region XI/TESDA CCNTS"
+            if (officeKey === "TESDA PO DS") return "REGION XI/PROVINICAL OFFICE"
+            if (officeKey === "PTC - DS") return "REGION XI / PTC-DAVAO DEL SUR"
 
             return office // Fallback
         }

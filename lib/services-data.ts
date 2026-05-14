@@ -170,12 +170,29 @@ export function getServicesForOfficeAndTransactions(
     officeInput: string,
     transactionTypes: string[]
 ): { category: ServiceCategory; services: string[] }[] {
-    // Determine which office code based on the input string 
-    // e.g. "Provincial District Office (TESDA PO DS)" -> "TESDA PO DS"
+    // Determine office code from both old abbreviations and new full office names.
+    const normalized = officeInput.toUpperCase().replace(/\s+/g, " ").trim();
+
     let officeKey = "";
-    if (officeInput.includes("TESDA PO DS")) officeKey = "TESDA PO DS";
-    else if (officeInput.includes("CCNTS")) officeKey = "CCNTS";
-    else if (officeInput.includes("PTC - DS")) officeKey = "PTC - DS";
+    if (
+        normalized.includes("TESDA PO DS") ||
+        normalized.includes("DAVAO DEL SUR PROVINCIAL OFFICE") ||
+        normalized.includes("PROVINCIAL OFFICE")
+    ) {
+        officeKey = "TESDA PO DS";
+    } else if (
+        normalized.includes("CCNTS") ||
+        normalized.includes("CARMELO C. DELOS CIENTOS") ||
+        normalized.includes("NATIONAL TRADE SCHOOL")
+    ) {
+        officeKey = "CCNTS";
+    } else if (
+        normalized.includes("PTC - DS") ||
+        normalized.includes("PTCDDS") ||
+        normalized.includes("PROVINCIAL TRAINING CENTERS")
+    ) {
+        officeKey = "PTC - DS";
+    }
 
     if (!officeKey || !transactionTypes || transactionTypes.length === 0) {
         return [];
