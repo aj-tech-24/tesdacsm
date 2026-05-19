@@ -11,9 +11,13 @@ interface MonthFilterProps {
     children?: ReactNode;
     totalResponses?: number;
     reportPeriodLabel?: string;
+    showTitle?: boolean;
+    showInputs?: boolean;
+    showCard?: boolean;
+    showStats?: boolean;
 }
 
-export default function MonthFilter({ children, totalResponses, reportPeriodLabel }: MonthFilterProps) {
+export default function MonthFilter({ children, totalResponses, reportPeriodLabel, showTitle = true, showInputs = true, showCard = true, showStats = true }: MonthFilterProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
     const searchParamsString = searchParams.toString();
@@ -75,6 +79,29 @@ export default function MonthFilter({ children, totalResponses, reportPeriodLabe
         router.push("?");
     };
 
+    // If caller requests no card, render only the small stats / children area so the filter
+    // UI doesn't occupy a rounded card. This is used by the Archive tab which manages its
+    // own controls and shouldn't display the dashboard filter card.
+    if (!showCard) {
+        return (
+            <div className="flex flex-wrap items-center gap-2 xl:ml-auto">
+                {showStats && typeof totalResponses !== "undefined" && (
+                    <div className="min-w-[116px] rounded-lg border border-slate-200 bg-slate-50/80 px-2.5 py-2">
+                        <p className="text-[11px] uppercase tracking-wide text-slate-500">Total Responses</p>
+                        <p className="mt-1 text-base font-semibold leading-none text-slate-900">{totalResponses}</p>
+                    </div>
+                )}
+                {showStats && reportPeriodLabel && (
+                    <div className="min-w-[140px] rounded-lg border border-slate-200 bg-slate-50/80 px-2.5 py-2">
+                        <p className="text-[11px] uppercase tracking-wide text-slate-500">Report Period</p>
+                        <p className="mt-1 text-xs font-semibold leading-tight text-slate-900">{reportPeriodLabel}</p>
+                    </div>
+                )}
+                <div>{children}</div>
+            </div>
+        );
+    }
+
     return (
         <div className="mb-4 rounded-xl border border-slate-200 bg-white p-3 shadow-sm print:hidden">
             <div className="flex flex-col gap-2.5 xl:flex-row xl:items-center xl:justify-between">
@@ -82,67 +109,71 @@ export default function MonthFilter({ children, totalResponses, reportPeriodLabe
                     <div className="rounded-lg bg-slate-100 p-1">
                         <CalendarRange className="h-3.5 w-3.5" />
                     </div>
-                    <h3 className="text-xs font-semibold tracking-wide">Filter Dashboard Data</h3>
+                    {showTitle ? (
+                        <h3 className="text-xs font-semibold tracking-wide">Filter Dashboard Data</h3>
+                    ) : null}
                 </div>
 
-                <div className="flex w-full flex-col gap-2 md:flex-row md:items-center xl:w-auto">
-                    <Select value={month} onValueChange={setMonth} disabled={isApplying}>
-                        <SelectTrigger className="h-9 w-full md:w-[170px]">
-                            <SelectValue placeholder="Select Month" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {months.map(m => <SelectItem key={m.val} value={m.val}>{m.label}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
+                {showInputs ? (
+                    <div className="flex w-full flex-col gap-2 md:flex-row md:items-center xl:w-auto">
+                        <Select value={month} onValueChange={setMonth} disabled={isApplying}>
+                            <SelectTrigger className="h-9 w-full md:w-[170px]">
+                                <SelectValue placeholder="Select Month" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {months.map(m => <SelectItem key={m.val} value={m.val}>{m.label}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
 
-                    <Select value={year} onValueChange={setYear} disabled={isApplying}>
-                        <SelectTrigger className="h-9 w-full md:w-[120px]">
-                            <SelectValue placeholder="Year" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {years.map(y => <SelectItem key={y} value={y}>{y === "all" ? "All Years" : y}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
+                        <Select value={year} onValueChange={setYear} disabled={isApplying}>
+                            <SelectTrigger className="h-9 w-full md:w-[120px]">
+                                <SelectValue placeholder="Year" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {years.map(y => <SelectItem key={y} value={y}>{y === "all" ? "All Years" : y}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
 
-                    <Select value={office} onValueChange={setOffice} disabled={isApplying}>
-                        <SelectTrigger className="h-9 w-full md:w-[200px]">
-                            <SelectValue placeholder="Office" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {offices.map(o => <SelectItem key={o.val} value={o.val}>{o.label}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
+                        <Select value={office} onValueChange={setOffice} disabled={isApplying}>
+                            <SelectTrigger className="h-9 w-full md:w-[200px]">
+                                <SelectValue placeholder="Office" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {offices.map(o => <SelectItem key={o.val} value={o.val}>{o.label}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
 
-                    <div className="flex items-center gap-2">
-                        <Button onClick={handleApply} size="sm" variant="default" disabled={isApplying} className="h-9 gap-2 bg-slate-900 px-3 text-xs hover:bg-slate-800 disabled:cursor-wait disabled:opacity-80">
-                            {isApplying ? <Loader2 className="h-4 w-4 animate-spin" /> : <Filter className="h-4 w-4" />}
-                            {isApplying ? "Applying..." : "Apply Filter"}
-                        </Button>
-
-                        {hasActiveFilters ? (
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={handleClear}
-                                disabled={isApplying}
-                                className="h-9 px-3 text-xs text-slate-600 hover:bg-slate-100"
-                            >
-                                Clear filters
+                        <div className="flex items-center gap-2">
+                            <Button onClick={handleApply} size="sm" variant="default" disabled={isApplying} className="h-9 gap-2 bg-slate-900 px-3 text-xs hover:bg-slate-800 disabled:cursor-wait disabled:opacity-80">
+                                {isApplying ? <Loader2 className="h-4 w-4 animate-spin" /> : <Filter className="h-4 w-4" />}
+                                {isApplying ? "Applying..." : "Apply Filter"}
                             </Button>
-                        ) : null}
-                    </div>
 
-                </div>
+                            {hasActiveFilters ? (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleClear}
+                                    disabled={isApplying}
+                                    className="h-9 px-3 text-xs text-slate-600 hover:bg-slate-100"
+                                >
+                                    Clear filters
+                                </Button>
+                            ) : null}
+                        </div>
+
+                    </div>
+                ) : null}
 
                 <div className="flex flex-wrap items-center gap-2 xl:ml-auto">
-                    {typeof totalResponses !== "undefined" && (
+                    {showStats && typeof totalResponses !== "undefined" && (
                         <div className="min-w-[116px] rounded-lg border border-slate-200 bg-slate-50/80 px-2.5 py-2">
                             <p className="text-[11px] uppercase tracking-wide text-slate-500">Total Responses</p>
                             <p className="mt-1 text-base font-semibold leading-none text-slate-900">{totalResponses}</p>
                         </div>
                     )}
-                    {reportPeriodLabel && (
+                    {showStats && reportPeriodLabel && (
                         <div className="min-w-[140px] rounded-lg border border-slate-200 bg-slate-50/80 px-2.5 py-2">
                             <p className="text-[11px] uppercase tracking-wide text-slate-500">Report Period</p>
                             <p className="mt-1 text-xs font-semibold leading-tight text-slate-900">{reportPeriodLabel}</p>

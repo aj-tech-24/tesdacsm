@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { getServiceCategoryFromExactList, servicesData, type ServiceCategory } from "@/lib/services-data"
 
 export async function POST(req: Request) {
     try {
@@ -93,11 +94,75 @@ export async function POST(req: Request) {
             return `${base}-${String(nextSeq).padStart(4, "0")}`
         }
 
-        // Helper: determine External / Internal based on service name
-        const getServiceCategory = (service: string): string => {
-            if (service.includes("(External)")) return "External";
-            if (service.includes("(Internal)")) return "Internal";
-            return "External";
+        // Helper: determine External Services / Internal Services based on office and service name
+        const getServiceCategory = (office: string, service: string): ServiceCategory => {
+            try {
+                const normalizedOffice = office.toUpperCase().replace(/\s+/g, " ").trim()
+
+                let officeKey = ""
+                if (
+                    normalizedOffice.includes("TESDA PO DS") ||
+                    normalizedOffice.includes("DAVAO DEL SUR PROVINCIAL OFFICE") ||
+                    normalizedOffice.includes("PROVINCIAL OFFICE")
+                ) {
+                    officeKey = "TESDA PO DS"
+                } else if (
+                    normalizedOffice.includes("CCNTS") ||
+                    normalizedOffice.includes("CARMELO C. DELOS CIENTOS") ||
+                    normalizedOffice.includes("NATIONAL TRADE SCHOOL")
+                ) {
+                    officeKey = "CCNTS"
+                } else if (
+                    normalizedOffice.includes("PTC - DS") ||
+                    normalizedOffice.includes("PTCDDS") ||
+                    normalizedOffice.includes("PROVINCIAL TRAINING CENTERS")
+                ) {
+                    officeKey = "PTC - DS"
+                }
+
+                if (!officeKey) return "External Services"
+
+                const officeContent = servicesData[officeKey]
+                if (!officeContent) return "External Services"
+
+                const target = (service || "").replace(/\s*\((External|Internal)\)\s*$/i, "").trim()
+
+                for (const txType of Object.keys(officeContent)) {
+                    const categories = officeContent[txType]
+                    for (const cat of Object.keys(categories) as Array<string>) {
+                        const list = categories[cat as keyof typeof categories]
+                        if (list && list.some(s => s === target)) {
+                            return cat === "Internal Services" ? "Internal Services" : "External Services"
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn('Error determining service category', e)
+            }
+
+            // Fallback: inspect suffix if present
+            if (service.includes("(External)")) return "External Services"
+            if (service.includes("(Internal)")) return "Internal Services"
+            return "External Services"
+        }
+
+        // Helper: normalize gender to exact DB values
+        const normalizeGender = (raw?: string | null) => {
+            if (!raw) return "Did not specify"
+            const v = String(raw).trim().toLowerCase()
+            if (v === "male" || v === "m") return "Male"
+            if (v === "female" || v === "f") return "Female"
+            return "Did not specify"
+        }
+
+        // Helper: normalize customer type to exact DB values
+        const normalizeCustomerType = (raw?: string | null) => {
+            if (!raw) return "Did not specify"
+            const v = String(raw).trim().toLowerCase()
+            if (v.includes("citizen")) return "Citizen"
+            if (v.includes("business")) return "Business"
+            if (v.includes("government") || v.includes("employee") || v.includes("agency")) return "Government"
+            return "Did not specify"
         }
 
         // Helper: format office string for the spreadsheet output
@@ -113,10 +178,37 @@ export async function POST(req: Request) {
 
         // Build row data matching required column order (A to AC)
         const controlNumber = await generateControlNumber(clientInfo.office || "", clientInfo.date || "");
-        const serviceCategory = getServiceCategory(clientInfo.citizensCharterService || "");
+        
+
+        // Determine if the client is a TESDA staff member based on office heuristics.
+        const normalizedOfficeForStaffCheck = (clientInfo.office || "").toUpperCase();
+
+            const rawServiceSelection = (clientInfo.citizensCharterService || "").trim()
+
+            // Determine category from explicit selection variants (e.g. "... For Staff" / "... For Client").
+            let serviceCategory = getServiceCategoryFromExactList(rawServiceSelection) || null;
+
+            // Normalize base service name for DB storage (strip the For Staff/For Client suffix)
+            const normalizedServiceForDb = rawServiceSelection.replace(/\s*For\s+(Staff|Client)$/i, "").replace(/\s*\((External|Internal)\)\s*$/i, "").trim();
+
+            if (!serviceCategory) serviceCategory = getServiceCategory(clientInfo.office || "", normalizedServiceForDb || "");
         const formattedOffice = getFormattedOffice(clientInfo.office || "");
-        // Clean up the service name by removing " (External)" or " (Internal)" from the end
-        const cleanService = (clientInfo.citizensCharterService || "").replace(/\s*\((External|Internal)\)$/i, "").trim()
+        // Normalize gender and customer type to exact DB values
+        const normalizedSex = normalizeGender(clientInfo.sex)
+        const normalizedClientType = normalizeCustomerType(clientInfo.clientType)
+
+        // Normalize transaction type labels from UI to canonical DB values
+        const mapTransactionLabel = (label: string) => {
+            const v = String(label || "").trim().toLowerCase()
+            if (v.includes("assessment")) return "Assessment & Certification"
+            if (v.includes("program")) return "Program Registration"
+            if (v.includes("training")) return "Training"
+            if (v.includes("scholarship")) return "Scholarship"
+            if (v.includes("administrative") || v.includes("admin")) return "Admin. Related"
+            if (v.includes("others") || v === "others") return "Others"
+            return String(label)
+        }
+        const dbTransactionTypes = (clientInfo.transactionTypes || []).map(mapTransactionLabel).join(", ") || null
 
         const sqdEntries = Object.entries(sqd)
             .map(([key, value]) => ({ key, rating: Number.parseInt(String(value), 10) }))
@@ -132,9 +224,9 @@ export async function POST(req: Request) {
             data: {
                 controlNumber: controlNumber,
                 name: clientInfo.name || null,
-                clientType: clientInfo.clientType || null,
+                clientType: normalizedClientType || null,
                 age: clientInfo.age || null,
-                sex: clientInfo.sex || null,
+                sex: normalizedSex || null,
                 formDate: clientInfo.date || null,
                 email: suggestions.email || null,
                 employeeName: suggestions.employeeName || null,
@@ -142,9 +234,9 @@ export async function POST(req: Request) {
                 province: clientInfo.province || null,
                 municipality: clientInfo.municipality || null,
                 office: formattedOffice,
-                citizensCharterService: cleanService,
+                citizensCharterService: normalizedServiceForDb || null,
                 serviceCategory: serviceCategory,
-                transactionTypes: clientInfo.transactionTypes?.join(", ") || null,
+                transactionTypes: dbTransactionTypes,
                 cc1: ccQuestions.cc1 || null,
                 cc2: ccQuestions.cc2 || null,
                 cc3: ccQuestions.cc3 || null,
@@ -172,10 +264,10 @@ export async function POST(req: Request) {
                     null,
                     "warning",
                     "Low rating alert",
-                    `${controlNumber} received a low customer rating for ${cleanService || "a service"}. ${lowScoreSummary}.`,
+                    `${controlNumber} received a low customer rating for ${normalizedServiceForDb || "a service"}. ${lowScoreSummary}.`,
                     controlNumber,
                     formattedOffice,
-                    cleanService || null,
+                    normalizedServiceForDb || null,
                     lowestRating,
                     feedbackEntry.id,
                 )

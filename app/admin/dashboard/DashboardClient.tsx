@@ -11,8 +11,10 @@ import DashboardVisualizations from "./DashboardVisualizations";
 import ActionManager from "./action-manager";
 import AnalysisForm from "./analysis-form";
 import AllFeedbacksTab from "./AllFeedbacksTab";
+import ArchiveClient from "../archive/ArchiveClient";
 import {
     AlertTriangle,
+    Archive,
     BarChart3,
     Bell,
     Check,
@@ -81,6 +83,7 @@ export default function DashboardClient({
     const [notifications, setNotifications] = useState<any[]>(initialNotifications);
     const [unreadCount, setUnreadCount] = useState(initialUnreadCount);
     const [notificationPage, setNotificationPage] = useState(1);
+    
     const NOTIFICATIONS_PER_PAGE = 5;
     const activeTabLabelByKey: Record<string, string> = {
         overview: "Overview",
@@ -103,6 +106,7 @@ export default function DashboardClient({
         { value: "actions", label: "Actions", icon: ClipboardList },
         ...(userRole === "super_admin" ? [{ value: "analysis", label: "Analysis", icon: FileText }] : []),
         { value: "all-feedbacks", label: "Feedbacks", icon: Layers3 },
+        { value: "archive", label: "Archive", icon: Archive },
     ];
     const mobileNavGridClass = userRole === "super_admin" ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-2";
 
@@ -145,6 +149,8 @@ export default function DashboardClient({
             window.clearInterval(timer);
         };
     }, []);
+
+    
 
     const handleFeedbackUpdated = (id: number, patch: Record<string, string>) => {
         setFeedbackList((prev) => prev.map((row) => (Number(row.id) === id ? { ...row, ...patch } : row)));
@@ -448,6 +454,11 @@ export default function DashboardClient({
                         <TabsContent value="all-feedbacks" className="mt-6 lg:min-w-0 print:hidden">
                             <MonthFilter totalResponses={totalResponses} reportPeriodLabel={reportPeriodLabel} />
                             <AllFeedbacksTab feedbackList={feedbackRawList} reportPeriodLabel={reportPeriodLabel} />
+                        </TabsContent>
+
+                        <TabsContent value="archive" className="mt-6 lg:min-w-0 print:hidden">
+                            <MonthFilter totalResponses={totalResponses} reportPeriodLabel={reportPeriodLabel} showTitle={false} showInputs={false} showCard={false} showStats={false} />
+                            <ArchiveClient userRole={userRole} userOffice={userOffice} />
                         </TabsContent>
                     </div>
                 </div>

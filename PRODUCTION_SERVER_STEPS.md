@@ -88,3 +88,27 @@ cd "D:\Tesda Project\CSM"
 npm run build
 npx next start -H 0.0.0.0 -p 3001
 ```
+
+## Enabling server-side PDF generation (Puppeteer)
+
+This app uses Puppeteer to render HTML to PDF on the server. For reliable PDF generation in production you must ensure a Chromium/Chrome binary is available.
+
+Option A — Install Chromium on the server (recommended):
+
+- On Debian/Ubuntu, install Chromium and set the `CHROME_EXECUTABLE_PATH` environment variable to the binary path, e.g. `/usr/bin/chromium`.
+- A helper script is provided at `scripts/install-chromium.sh` for Debian-like systems.
+
+Option B — Install Chrome/Edge on Windows:
+
+- Use the PowerShell helper `scripts/install-chrome.ps1` (uses `winget` when available). Set `CHROME_EXECUTABLE_PATH` to the installed exe path.
+
+Set the environment variable and restart the server (example for Linux):
+
+```bash
+export CHROME_EXECUTABLE_PATH=/usr/bin/chromium
+npm run start
+```
+
+The server will pass `CHROME_EXECUTABLE_PATH` to Puppeteer when launching the browser. If not set, the app will still attempt to use Puppeteer's bundled browser; when PDF generation fails the API falls back to returning HTML for manual browser printing.
+
+Note: If you're deploying to a container, include the Chromium binary in the image and set `CHROME_EXECUTABLE_PATH` in your container environment.

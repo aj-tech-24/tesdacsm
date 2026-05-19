@@ -10,7 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Emoji3D } from "@/components/emoji-3d"
 import { cn } from "@/lib/utils"
 import { User, Calendar, MapPin, Briefcase, FileText } from "lucide-react"
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { getServicesForOfficeAndTransactions } from "@/lib/services-data"
 
@@ -164,7 +164,7 @@ interface ClientInfoSectionProps {
     province?: string
     municipality?: string
   }
-  onChange: (field: string, value: string | string[]) => void
+  onChange: (field: string, value: string | string[] | boolean) => void
 }
 
 export const ClientInfoSection = memo(function ClientInfoSection({ formData, onChange }: ClientInfoSectionProps) {
@@ -173,19 +173,19 @@ export const ClientInfoSection = memo(function ClientInfoSection({ formData, onC
   // const isOthersChecked = formData.transactionTypes.includes("Others")
   const [isCustomService, setIsCustomService] = useState(false)
 
-  const availableServiceGroups = useMemo(() => {
+  const availableServices = useMemo(() => {
     return getServicesForOfficeAndTransactions(formData.office, formData.transactionTypes)
   }, [formData.office, formData.transactionTypes])
 
   // Clear or adjust selected service if it's no longer in the list of available services
-  const prevGroupsRef = useRef(availableServiceGroups);
+  const prevGroupsRef = useRef(availableServices);
   useEffect(() => {
-    if (prevGroupsRef.current !== availableServiceGroups) {
-      prevGroupsRef.current = availableServiceGroups;
+    if (prevGroupsRef.current !== availableServices) {
+      prevGroupsRef.current = availableServices;
       setIsCustomService(false); // Reset custom service input when transactions change
       onChange("citizensCharterService", "");
     }
-  }, [availableServiceGroups, onChange]);
+  }, [availableServices, onChange]);
 
   const handleTransactionTypeChange = (type: string, checked: boolean) => {
     if (checked) {
@@ -341,16 +341,16 @@ export const ClientInfoSection = memo(function ClientInfoSection({ formData, onC
               className="flex gap-3 pt-1"
             >
               {[
-                { value: "male", label: "Male" },
-                { value: "female", label: "Female" },
-              ].map((opt) => (
-                <div key={opt.value} className="flex items-center space-x-2">
-                  <RadioGroupItem value={opt.value} id={opt.value} />
-                  <Label htmlFor={opt.value} className="text-sm font-normal cursor-pointer text-card-foreground">
-                    {opt.label}
-                  </Label>
-                </div>
-              ))}
+                  { value: "male", label: "Male" },
+                  { value: "female", label: "Female" },
+                ].map((opt) => (
+                  <div key={opt.value} className="flex items-center space-x-2">
+                    <RadioGroupItem value={opt.value} id={opt.value} />
+                    <Label htmlFor={opt.value} className="text-sm font-normal cursor-pointer text-card-foreground">
+                      {opt.label}
+                    </Label>
+                  </div>
+                ))}
             </RadioGroup>
           </div>
 
@@ -470,7 +470,7 @@ export const ClientInfoSection = memo(function ClientInfoSection({ formData, onC
                 value={formData.citizensCharterService || ""}
                 className="bg-muted text-muted-foreground"
               />
-            ) : availableServiceGroups.length === 0 ? (
+            ) : availableServices.length === 0 ? (
               <Input
                 id="service"
                 placeholder="Please specify your service..."
@@ -515,15 +515,10 @@ export const ClientInfoSection = memo(function ClientInfoSection({ formData, onC
                   <SelectValue placeholder="Select a service..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {availableServiceGroups.map((group) => (
-                    <SelectGroup key={group.category}>
-                      <SelectLabel className="font-semibold text-primary/80">{group.category}</SelectLabel>
-                      {group.services.map((service) => (
-                        <SelectItem key={service} value={service}>
-                          {service}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
+                  {availableServices.map((service) => (
+                    <SelectItem key={service} value={service}>
+                      {service}
+                    </SelectItem>
                   ))}
                   <SelectItem value="___CUSTOM___" className="font-medium text-primary">
                     Others (Please specify)

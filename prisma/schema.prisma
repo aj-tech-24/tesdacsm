@@ -62,6 +62,7 @@ model Feedback {
   actionProvided         String?
   dateResolved           String?
   natureOfTransaction    String?
+  isArchived             Boolean  @default(false)
 
   notification           Notification?
 }

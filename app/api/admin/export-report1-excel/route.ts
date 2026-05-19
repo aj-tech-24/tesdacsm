@@ -5,6 +5,7 @@ import XlsxPopulate from "xlsx-populate";
 import { getSession } from "@/lib/session";
 
 type FeedbackRow = {
+    no?: string | number;
     date?: string | Date;
     createdAt?: string | Date;
     formDate?: string;
@@ -31,15 +32,15 @@ type FeedbackRow = {
     cc1?: string;
     cc2?: string;
     cc3?: string;
-    sqd0?: string | number;
-    sqd1?: string | number;
-    sqd2?: string | number;
-    sqd3?: string | number;
-    sqd4?: string | number;
-    sqd5?: string | number;
-    sqd6?: string | number;
-    sqd7?: string | number;
-    sqd8?: string | number;
+    sqd0?: number;
+    sqd1?: number;
+    sqd2?: number;
+    sqd3?: number;
+    sqd4?: number;
+    sqd5?: number;
+    sqd6?: number;
+    sqd7?: number;
+    sqd8?: number;
     citizenComment?: string;
     suggestions?: string;
     actionTaken?: string;
@@ -47,14 +48,21 @@ type FeedbackRow = {
     natureOfTransaction?: string;
 };
 
-const START_ROW = 13;
-const END_ROW = 511;
-const START_COLUMN = 2; // B
+const START_ROW = 12;
+const END_ROW = 507;
+const START_COLUMN = 1; // B
 const MAX_ROWS = END_ROW - START_ROW + 1;
 
 const toExcelText = (value: unknown) => {
     if (value === null || value === undefined) return "";
     return String(value);
+};
+
+const toExcelNumber = (value: unknown) => {
+    if (value === null || value === undefined || value === "") return "";
+
+    const parsed = typeof value === "number" ? value : Number(String(value).trim());
+    return Number.isFinite(parsed) ? parsed : "";
 };
 
 const toDate = (value: unknown): Date | null => {
@@ -158,50 +166,50 @@ export async function POST(req: Request) {
 
         rows.forEach((row, index) => {
             const excelRow = START_ROW + index;
+            const rowNumber = index + 1;
 
             const dateValue = row.date ?? row.formDate ?? row.createdAt;
             const dateResolveValue = row.dateResolve ?? row.dateResolved;
             const daysToResolutionValue =
                 row.daysToResolution ?? computeDaysToResolution(dateValue, dateResolveValue);
 
-            // B:AE, with AD intentionally blank.
-            const mappedValues = [
-                toISODate(dateValue),
-                row.controlNumber,
-                row.clientName ?? row.name,
-                row.clientType,
-                row.age,
-                normalizeGender(row.gender ?? row.sex),
-                row.email,
-                row.officeVisited ?? row.office,
-                row.ccService ?? row.citizensCharterService,
-                normalizeServiceCategory(row.externalInternal ?? row.serviceCategory),
-                row.typeOfTransaction ?? row.transactionTypes,
-                row.actionProvided,
-                toISODate(dateResolveValue),
-                daysToResolutionValue,
-                row.cc1,
-                row.cc2,
-                row.cc3,
-                row.sqd0,
-                row.sqd1,
-                row.sqd2,
-                row.sqd3,
-                row.sqd4,
-                row.sqd5,
-                row.sqd6,
-                row.sqd7,
-                row.sqd8,
-                row.citizenComment ?? row.suggestions,
-                row.actionTaken,
-                "", // AD is empty by requirement.
-                row.complaintNature ?? row.natureOfTransaction,
-            ];
-
-            mappedValues.forEach((value, colOffset) => {
+            const writeValue = (colOffset: number, value: unknown, asNumber = false) => {
                 const address = cellAddress(excelRow, START_COLUMN + colOffset);
-                sheet.cell(address).value(toExcelText(value));
-            });
+                sheet.cell(address).value(asNumber ? toExcelNumber(value) : toExcelText(value));
+            };
+
+            // B:AE, with AD intentionally blank.
+            writeValue(0, row.no ?? rowNumber);
+            writeValue(1, toISODate(dateValue));
+            writeValue(2, row.controlNumber);
+            writeValue(3, row.clientName ?? row.name);
+            writeValue(4, row.clientType);
+            writeValue(5, row.age);
+            writeValue(6, normalizeGender(row.gender ?? row.sex));
+            writeValue(7, row.email);
+            writeValue(8, row.officeVisited ?? row.office);
+            writeValue(9, row.ccService ?? row.citizensCharterService);
+            writeValue(10, normalizeServiceCategory(row.externalInternal ?? row.serviceCategory));
+            writeValue(11, row.typeOfTransaction ?? row.transactionTypes);
+            writeValue(12, row.actionProvided);
+            writeValue(13, toISODate(dateResolveValue));
+            writeValue(14, daysToResolutionValue, true);
+            writeValue(15, row.cc1, true);
+            writeValue(16, row.cc2, true);
+            writeValue(17, row.cc3, true);
+            writeValue(18, row.sqd0, true);
+            writeValue(19, row.sqd1, true);
+            writeValue(20, row.sqd2, true);
+            writeValue(21, row.sqd3, true);
+            writeValue(22, row.sqd4, true);
+            writeValue(23, row.sqd5, true);
+            writeValue(24, row.sqd6, true);
+            writeValue(25, row.sqd7, true);
+            writeValue(26, row.sqd8, true);
+            writeValue(27, row.citizenComment ?? row.suggestions);
+            writeValue(28, row.actionTaken);
+            writeValue(29, ""); // AD is empty by requirement.
+            writeValue(30, row.complaintNature ?? row.natureOfTransaction);
         });
 
         const outputBuffer = await workbook.outputAsync({ type: "nodebuffer" }) as Buffer;

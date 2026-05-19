@@ -9,7 +9,7 @@ import { buildClientFeedbackPrintHtml, type FeedbackPrintSnapshot } from "@/lib/
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getServicesForOfficeAndTransactions } from "@/lib/services-data";
 import { toast } from "sonner";
 
@@ -199,7 +199,7 @@ export default function AllFeedbacksTab({ feedbackList, reportPeriodLabel }: { f
         return sortedFeedbackList.slice(start, start + pageSize);
     }, [sortedFeedbackList, page]);
 
-    const availableServiceGroupsForEdit = useMemo(() => {
+    const availableServicesForEdit = useMemo(() => {
         if (!editForm.office || !editForm.transactionTypes) return [];
         return getServicesForOfficeAndTransactions(editForm.office, [editForm.transactionTypes]);
     }, [editForm.office, editForm.transactionTypes]);
@@ -226,6 +226,7 @@ export default function AllFeedbacksTab({ feedbackList, reportPeriodLabel }: { f
         });
 
         const snapshot: FeedbackPrintSnapshot = {
+            formDate: row.formDate || "",
             submittedAt,
             controlNumber: row.controlNumber || "",
             dbId: typeof row.id === "number" ? row.id : null,
@@ -238,6 +239,7 @@ export default function AllFeedbacksTab({ feedbackList, reportPeriodLabel }: { f
                 regionOfResidence: row.regionOfResidence || "",
                 province: row.province || "",
                 municipality: row.municipality || "",
+                formDate: row.formDate || "",
                 citizensCharterService: row.citizensCharterService || "",
                 transactionTypes: getTransactionTypes(row.transactionTypes),
             },
@@ -340,9 +342,9 @@ export default function AllFeedbacksTab({ feedbackList, reportPeriodLabel }: { f
         setEditingRow(row);
         const normalizedTx = normalizeTransactionType(row.transactionTypes);
         const existingService = asText(row.citizensCharterService).trim();
-        const serviceGroups = getServicesForOfficeAndTransactions(asText(row.office), normalizedTx ? [normalizedTx] : []);
-        const hasServiceInPreset = serviceGroups.some((group) => group.services.includes(existingService));
-        setIsCustomServiceEdit(Boolean(existingService) && serviceGroups.length > 0 && !hasServiceInPreset);
+        const serviceOptions = getServicesForOfficeAndTransactions(asText(row.office), normalizedTx ? [normalizedTx] : []);
+        const hasServiceInPreset = serviceOptions.includes(existingService);
+        setIsCustomServiceEdit(Boolean(existingService) && serviceOptions.length > 0 && !hasServiceInPreset);
         setEditForm({
             controlNumber: asText(row.controlNumber),
             name: asText(row.name),
@@ -671,7 +673,7 @@ export default function AllFeedbacksTab({ feedbackList, reportPeriodLabel }: { f
                                     <p className="text-sm font-medium text-slate-700">Citizens Charter Service Availed</p>
                                     {!editForm.transactionTypes ? (
                                         <Input value="" placeholder="Please select a transaction type first" disabled className="bg-muted text-muted-foreground" />
-                                    ) : availableServiceGroupsForEdit.length === 0 || isCustomServiceEdit ? (
+                                    ) : availableServicesForEdit.length === 0 || isCustomServiceEdit ? (
                                         <div className="flex gap-2">
                                             <Input
                                                 value={editForm.citizensCharterService}
@@ -679,7 +681,7 @@ export default function AllFeedbacksTab({ feedbackList, reportPeriodLabel }: { f
                                                 placeholder="Please specify your service..."
                                                 disabled={isSavingEdit}
                                             />
-                                            {availableServiceGroupsForEdit.length > 0 && isCustomServiceEdit ? (
+                                            {availableServicesForEdit.length > 0 && isCustomServiceEdit ? (
                                                 <Button
                                                     type="button"
                                                     variant="outline"
@@ -710,13 +712,8 @@ export default function AllFeedbacksTab({ feedbackList, reportPeriodLabel }: { f
                                                 <SelectValue placeholder="Select a service..." />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                {availableServiceGroupsForEdit.map((group) => (
-                                                    <SelectGroup key={group.category}>
-                                                        <SelectLabel className="font-semibold text-primary/80">{group.category}</SelectLabel>
-                                                        {group.services.map((service) => (
-                                                            <SelectItem key={service} value={service}>{service}</SelectItem>
-                                                        ))}
-                                                    </SelectGroup>
+                                                {availableServicesForEdit.map((service) => (
+                                                    <SelectItem key={service} value={service}>{service}</SelectItem>
                                                 ))}
                                                 <SelectItem value="___CUSTOM___" className="font-medium text-primary">
                                                     Others (Please specify)

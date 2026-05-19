@@ -1,0 +1,135 @@
+import { NextResponse } from "next/server";
+import { getTursoClient } from "@/lib/turso";
+import { getSession } from "@/lib/session";
+
+export async function GET(req: Request) {
+    try {
+        const session = await getSession();
+        if (!session) {
+            return NextResponse.json(
+                { success: false, error: "Not authorized" },
+                { status: 401 }
+            );
+        }
+
+        const { searchParams } = new URL(req.url);
+        const yearFilter = searchParams.get("year");
+
+        const client = getTursoClient();
+
+        // Build query based on role
+        let query = `
+            SELECT 
+                id, formDate, office, isArchived,
+                cc1, cc2, cc3, suggestions,
+                sqd0, sqd1, sqd2, sqd3, sqd4, sqd5, sqd6, sqd7, sqd8
+            FROM Feedback
+            ORDER BY formDate DESC
+        `;
+
+        const result = await client.execute(query);
+        const allFeedback = result.rows || [];
+
+        // Role-based filtering
+        const filteredFeedback = session.role === "office_admin"
+            ? allFeedback.filter((f: any) => {
+                const officeStr = String(f.office || "").trim().toUpperCase();
+                const sessionOfficeStr = (session.office || "").trim().toUpperCase();
+                return officeStr.includes(sessionOfficeStr);
+            })
+            : allFeedback;
+
+        // Helper function to check if feedback is answered
+        const isAnswered = (row: any) => {
+            const hasSQD = [row.sqd0, row.sqd1, row.sqd2, row.sqd3, row.sqd4, row.sqd5, row.sqd6, row.sqd7, row.sqd8]
+                .some(v => v !== null);
+            const hasCC = [row.cc1, row.cc2, row.cc3].some(v => v !== null);
+            const hasSuggestions = row.suggestions !== null;
+            return hasSQD || hasCC || hasSuggestions;
+        };
+
+        // Group by month
+        const monthlyMap: Record<string, any> = {};
+
+        filteredFeedback.forEach((feedback: any) => {
+            const formDate = String(feedback.formDate || "");
+            if (!formDate) return;
+
+            const [year] = formDate.split("-").map((p: string) => parseInt(p, 10));
+
+            // Filter by year if specified
+            if (yearFilter && yearFilter !== "all" && year !== parseInt(yearFilter, 10)) {
+                return;
+            }
+
+            const monthKey = formDate.substring(0, 7); // YYYY-MM
+
+            if (!monthlyMap[monthKey]) {
+                monthlyMap[monthKey] = {
+                    feedbacks: [],
+                    answered: [],
+                    archived: [],
+                    offices: {},
+                };
+            }
+
+            monthlyMap[monthKey].feedbacks.push(feedback);
+            if (isAnswered(feedback)) {
+                monthlyMap[monthKey].answered.push(feedback);
+            }
+            if (feedback.isArchived) {
+                monthlyMap[monthKey].archived.push(feedback);
+            }
+
+            // Track by office
+            const office = feedback.office || "Unknown";
+            if (!monthlyMap[monthKey].offices[office]) {
+                monthlyMap[monthKey].offices[office] = { total: 0, answered: 0, archived: 0 };
+            }
+            monthlyMap[monthKey].offices[office].total += 1;
+            if (isAnswered(feedback)) {
+                monthlyMap[monthKey].offices[office].answered += 1;
+            }
+            if (feedback.isArchived) {
+                monthlyMap[monthKey].offices[office].archived += 1;
+            }
+        });
+
+        // Format response
+        const monthNames = [
+            "January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"
+        ];
+
+        const data = Object.entries(monthlyMap)
+            .map(([monthKey, stats]: [string, any]) => {
+                const [year, month] = monthKey.split("-").map((p: string) => parseInt(p, 10));
+                return {
+                    month: monthKey,
+                    year,
+                    monthName: monthNames[month - 1],
+                    total: stats.feedbacks.length,
+                    answered: stats.answered.length,
+                    pending: stats.feedbacks.length - stats.answered.length,
+                    archived: stats.archived.length,
+                    byOffice: stats.offices,
+                };
+            })
+            .sort((a, b) => {
+                const dateA = new Date(`${a.year}-${String(a.year).padStart(2, "0")}`);
+                const dateB = new Date(`${b.year}-${String(b.year).padStart(2, "0")}`);
+                return dateB.getTime() - dateA.getTime();
+            });
+
+        return NextResponse.json({
+            success: true,
+            data,
+        });
+    } catch (error: any) {
+        console.error("Archive Monthly Summary Error:", error);
+        return NextResponse.json(
+            { success: false, error: error.message },
+            { status: 500 }
+        );
+    }
+}

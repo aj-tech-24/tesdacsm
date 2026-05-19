@@ -47,11 +47,11 @@ export const servicesData: Record<string, OfficeServices> = {
         },
         "Administrative": {
             "External Services": [
-                "Payment of Scholarship Vouchers",
+                "Payment of Scholarship Vouchers For Client",
                 "Payment of Training Support Fund-Last Tranche",
             ],
             "Internal Services": [
-                "Payment of Scholarship Vouchers",
+                "Payment of Scholarship Vouchers For Staff",
                 "Issuance of Supplies Available on Stock",
                 "Procurement of Supplies, Equipment and Services",
             ],
@@ -166,10 +166,56 @@ export const servicesData: Record<string, OfficeServices> = {
     },
 };
 
+export const exactServiceCategoryMap: Record<string, ServiceCategory> = {
+    "Application for Assessment and Certification": "External Services",
+    "Accreditation of New Competency Assessors": "External Services",
+    "Accreditation of Competency Assessment Centers": "External Services",
+    "Availment of Scholarship Programs (Face to Face)": "External Services",
+    "Availment of Scholarship Programs (Online)": "External Services",
+    "Complaints Handling": "External Services",
+    "Conduct of Training Induction Program (TIP)": "External Services",
+    "Customer Inquiry and Feedback Through Calls": "External Services",
+    "Customer Inquiry and Feedback Through Calls with concerned Office": "External Services",
+    "Customer Inquiry and Feedback Through Public Assistance and Complaint Desk": "External Services",
+    "Customer Inquiry and Feedback Through Public Assistance and Complaint Desk with concerned Office": "External Services",
+    "Customer Inquiry and Feedback Through SMS and Electronic mails": "External Services",
+    "Customer Inquiry and Feedback Through SMS and Electronic mails with concerned Office": "External Services",
+    "Issuance of Certification for Authentication and Verification (CAV) of Scholastic Records": "External Services",
+    "Issuance of Certified True Copy (CTC) of National Certificate (NC)/ Certificate of Competency (CoC)": "External Services",
+    "Issuance of E-Certification (NC/COC)": "External Services",
+    "Issuance of National TVET Trainer Certificate": "External Services",
+    "Issuance of NC Plastic Card": "External Services",
+    "Issuance of Special Order (SO)": "External Services",
+    "Online Processing of Program Registration Application": "External Services",
+    "Payment of Training Support Fund-Last Tranche": "External Services",
+    "Preparation of Provincial Qualification Map": "External Services",
+    "Program Registration": "External Services",
+    "Release of Starter Toolkits": "External Services",
+    "Renewal of Competency Assessor’s Accreditation": "External Services",
+    "Renewal of National Certificate/ Certificate of Competency": "External Services",
+    "Replacement of Damaged National Certificate/Certificate of Competency": "External Services",
+    "Replacement of Lost National Certificate and Certificate of Competency": "External Services",
+    "Replacement of National Certificate and Certificate of Competency due to Change of Name": "External Services",
+    "Replacement of NC/COC due to Erroneous Entry": "External Services",
+
+    "Issuance of Supplies Available on Stock": "Internal Services",
+    "Procurement of Supplies, Equipment and Services": "Internal Services",
+};
+
+export function getServiceCategoryFromExactList(serviceName: string): ServiceCategory | null {
+    const normalized = serviceName.replace(/\s*\((External|Internal)\)\s*$/i, "").trim();
+
+    // Explicit variants that indicate client type in the selection
+    if (/For Staff$/i.test(normalized)) return "Internal Services";
+    if (/For Client$/i.test(normalized)) return "External Services";
+
+    return exactServiceCategoryMap[normalized] || null;
+}
+
 export function getServicesForOfficeAndTransactions(
     officeInput: string,
     transactionTypes: string[]
-): { category: ServiceCategory; services: string[] }[] {
+): string[] {
     // Determine office code from both old abbreviations and new full office names.
     const normalized = officeInput.toUpperCase().replace(/\s+/g, " ").trim();
 
@@ -201,37 +247,22 @@ export function getServicesForOfficeAndTransactions(
     const officeContent = servicesData[officeKey];
     if (!officeContent) return [];
 
-    const externalSet = new Set<string>();
-    const internalSet = new Set<string>();
+    const serviceSet = new Set<string>();
 
     for (const tType of transactionTypes) {
         const matchedCategory = officeContent[tType] || officeContent["Others"];
 
         if (matchedCategory) {
             if (matchedCategory["External Services"]) {
-                matchedCategory["External Services"].forEach(s => externalSet.add(s));
+                matchedCategory["External Services"].forEach((s) => serviceSet.add(s));
             }
             if (matchedCategory["Internal Services"]) {
-                matchedCategory["Internal Services"].forEach(s => internalSet.add(s));
+                matchedCategory["Internal Services"].forEach((s) => serviceSet.add(s));
             }
         }
     }
 
-    const result: { category: ServiceCategory; services: string[] }[] = [];
-    if (externalSet.size > 0) {
-        result.push({
-            category: "External Services",
-            services: Array.from(externalSet).map(s => internalSet.has(s) ? `${s} (External)` : s)
-        });
-    }
-    if (internalSet.size > 0) {
-        result.push({
-            category: "Internal Services",
-            services: Array.from(internalSet).map(s => externalSet.has(s) ? `${s} (Internal)` : s)
-        });
-    }
-
-    return result;
+    return Array.from(serviceSet);
 }
 
 /**

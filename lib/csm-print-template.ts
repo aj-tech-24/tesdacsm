@@ -1,4 +1,5 @@
 export type FeedbackPrintSnapshot = {
+  formDate?: string
   submittedAt: string
   controlNumber: string
   dbId: number | null
@@ -11,6 +12,7 @@ export type FeedbackPrintSnapshot = {
     regionOfResidence: string
     province: string
     municipality: string
+    formDate?: string
     citizensCharterService: string
     transactionTypes: string[]
   }
@@ -51,6 +53,7 @@ export const buildClientFeedbackPrintHtml = (
   snapshot: FeedbackPrintSnapshot,
   submittedDate: string,
   logoUrl: string,
+  assets?: Record<string, string> // optional map of asset name -> data URI
 ) => {
   const mark = (checked: boolean) => (checked ? "&#10004;" : "&nbsp;")
   const ccMark = (checked: boolean) => (checked ? "&#9745;" : "&#9744;")
@@ -81,11 +84,11 @@ export const buildClientFeedbackPrintHtml = (
   const assetBase = originMatch ? originMatch[0] : ""
 
   const sqdScaleColumns = [
-    { key: "1", label: "Strongly Disagree", icon: `${assetBase}/SQD/${encodeURIComponent("strong disagree")}.png` },
-    { key: "2", label: "Disagree", icon: `${assetBase}/SQD/${encodeURIComponent("disagree")}.png` },
-    { key: "3", label: "Neither Agree nor Disagree", icon: `${assetBase}/SQD/${encodeURIComponent("neutral")}.png` },
-    { key: "4", label: "Agree", icon: `${assetBase}/SQD/${encodeURIComponent("agree")}.png` },
-    { key: "5", label: "Strongly Agree", icon: `${assetBase}/SQD/${encodeURIComponent("strong agree")}.png` },
+    { key: "1", label: "Strongly Disagree", icon: assets?.["strong disagree"] ?? `${assetBase}/SQD/${encodeURIComponent("strong disagree")}.png` },
+    { key: "2", label: "Disagree", icon: assets?.["disagree"] ?? `${assetBase}/SQD/${encodeURIComponent("disagree")}.png` },
+    { key: "3", label: "Neither Agree nor Disagree", icon: assets?.["neutral"] ?? `${assetBase}/SQD/${encodeURIComponent("neutral")}.png` },
+    { key: "4", label: "Agree", icon: assets?.["agree"] ?? `${assetBase}/SQD/${encodeURIComponent("agree")}.png` },
+    { key: "5", label: "Strongly Agree", icon: assets?.["strong agree"] ?? `${assetBase}/SQD/${encodeURIComponent("strong agree")}.png` },
     { key: "na", label: "Not Applicable", icon: "" },
   ]
 
@@ -115,6 +118,17 @@ export const buildClientFeedbackPrintHtml = (
         </tr>`
     })
     .join("")
+
+  // Format the form date (prefer top-level snapshot.formDate, fallback to clientInfo.formDate)
+  const rawFormDate = (snapshot.formDate || snapshot.clientInfo.formDate || "").trim()
+  const displayFormDate = (() => {
+    if (!rawFormDate) return ""
+    const parsed = new Date(rawFormDate)
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+    }
+    return rawFormDate
+  })()
 
   return `<!doctype html>
 <html>
@@ -357,7 +371,7 @@ export const buildClientFeedbackPrintHtml = (
 
       <div class="line-row">
         <div>Date:</div>
-        <div class="fill">${escapeHtml(submittedDate)}</div>
+        <div class="fill">${escapeHtml(displayFormDate || "")}</div>
         <div>Name (Optional)</div>
         <div class="fill">${escapeHtml(snapshot.clientInfo.name || "")}</div>
         <div>Sex: ${ccMark(isMale)} Male ${ccMark(isFemale)} Female</div>

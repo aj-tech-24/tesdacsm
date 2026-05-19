@@ -36,7 +36,7 @@ export default function ClientSatisfactionForm() {
     province: "",
     municipality: "",
     citizensCharterService: "",
-    transactionTypes: [] as string[]
+    transactionTypes: [] as string[],
   })
 
   const [ccQuestions, setCcQuestions] = useState({
@@ -53,7 +53,7 @@ export default function ClientSatisfactionForm() {
     employeeName: ""
   })
 
-  const handleClientInfoChange = useCallback((field: string, value: string | string[]) => {
+  const handleClientInfoChange = useCallback((field: string, value: string | string[] | boolean) => {
     if (field === "office" && typeof value === "string" && value.trim()) {
       localStorage.setItem(SELECTED_OFFICE_KEY, value)
     }
@@ -99,6 +99,7 @@ export default function ClientSatisfactionForm() {
           submittedAt: new Date().toISOString(),
           controlNumber: payload.controlNumber || "",
           dbId: typeof payload.dbId === "number" ? payload.dbId : null,
+          formDate: clientInfo.date,
           clientInfo: {
             office: clientInfo.office,
             clientType: clientInfo.clientType,
@@ -108,6 +109,7 @@ export default function ClientSatisfactionForm() {
             regionOfResidence: clientInfo.regionOfResidence,
             province: clientInfo.province,
             municipality: clientInfo.municipality,
+            formDate: clientInfo.date,
             citizensCharterService: clientInfo.citizensCharterService,
             transactionTypes: [...clientInfo.transactionTypes],
           },
@@ -150,7 +152,7 @@ export default function ClientSatisfactionForm() {
       province: "",
       municipality: "",
       citizensCharterService: "",
-      transactionTypes: []
+      transactionTypes: [],
     })
     setCcQuestions({ cc1: "", cc2: "", cc3: "" })
     setSqd({})
