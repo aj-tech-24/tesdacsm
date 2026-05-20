@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Archive, FileText } from "lucide-react";
+import { Archive, Download, Search, X } from "lucide-react";
 import ArchiveCard from "./archive-card";
 import ArchiveForm from "./archive-form";
 import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
 
 interface MonthlySummary {
     monthKey: string;
@@ -38,6 +39,8 @@ export default function ArchiveClient({
     const [isLoading, setIsLoading] = useState(false);
     const [downloadingMonth, setDownloadingMonth] = useState<string | null>(null);
     const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
+    const [downloadStage, setDownloadStage] = useState<"preparing" | "downloading" | "finalizing" | null>(null);
+    const autoProgressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     // Helper to concatenate multiple Uint8Array chunks into one
     const concatUint8Arrays = (chunks: Uint8Array[]) => {
@@ -58,6 +61,34 @@ export default function ArchiveClient({
     const [months, setMonths] = useState<MonthlySummary[]>(monthlySummary || []);
     const [totalMonths, setTotalMonths] = useState<number>(monthlySummary ? monthlySummary.length : 0);
     const [loadingServer, setLoadingServer] = useState(false);
+
+    const totalFeedbackCount = useMemo(
+        () => totalFeedback ?? months.reduce((acc, m) => acc + (m.total || 0), 0),
+        [months, totalFeedback]
+    );
+    const answeredFeedbackCount = useMemo(
+        () => months.reduce((acc, m) => acc + (m.answered || 0), 0),
+        [months]
+    );
+    const answeredRate = totalFeedbackCount > 0 ? Math.round((answeredFeedbackCount / totalFeedbackCount) * 100) : 0;
+
+    const stopAutoProgress = () => {
+        if (autoProgressTimerRef.current) {
+            clearInterval(autoProgressTimerRef.current);
+            autoProgressTimerRef.current = null;
+        }
+    };
+
+    const startAutoProgress = (max: number, step = 1, intervalMs = 170) => {
+        stopAutoProgress();
+        autoProgressTimerRef.current = setInterval(() => {
+            setDownloadProgress((prev) => {
+                const base = prev ?? 6;
+                if (base >= max) return base;
+                return Math.min(max, base + step);
+            });
+        }, intervalMs);
+    };
 
     // Get unique years from data (fallback to months state)
     const years = Array.from(new Set((monthlySummary || months).map((m) => m.year))).sort((a, b) => b - a);
@@ -116,15 +147,23 @@ export default function ArchiveClient({
         return () => { isActive = false; };
     }, [selectedYear, searchTerm, currentPage, pageSize]);
 
+    useEffect(() => {
+        return () => {
+            stopAutoProgress();
+        };
+    }, []);
+
     const handleBulkPrint = async (monthKey: string) => {
         setIsLoading(true);
         setDownloadingMonth(monthKey);
-        setDownloadProgress(0);
+        setDownloadStage("preparing");
+        setDownloadProgress(6);
+        startAutoProgress(28, 1, 180);
         try {
             const response = await fetch("/api/admin/archive/bulk-print", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ monthKey, format: "pdf" }),
+                body: JSON.stringify({ monthKey }),
             });
 
             if (!response.ok) {
@@ -137,6 +176,13 @@ export default function ArchiveClient({
             // Try to stream the response to provide progress updates when Content-Length is present
             const contentLength = Number(response.headers.get("Content-Length") || response.headers.get("content-length") || 0);
             const respContentType = response.headers.get("content-type") || "application/octet-stream";
+            setDownloadStage("downloading");
+            if (contentLength > 0) {
+                stopAutoProgress();
+            } else {
+                startAutoProgress(90, 1, 160);
+            }
+
             if (response.body && typeof ReadableStream !== "undefined") {
                 const reader = response.body.getReader();
                 const chunks: Uint8Array[] = [];
@@ -150,47 +196,58 @@ export default function ArchiveClient({
                         chunks.push(chunk);
                         received += value.length;
                         if (contentLength) {
-                            setDownloadProgress(Math.min(100, Math.round((received / contentLength) * 100)));
+                            const measured = Math.min(94, Math.max(12, Math.round((received / contentLength) * 92) + 2));
+                            setDownloadProgress((prev) => Math.max(prev ?? 0, measured));
                         } else {
-                            // unknown total size; show indeterminate progress by increasing value
-                            setDownloadProgress((prev) => (prev === null ? 5 : Math.min(95, (prev || 5) + 10)));
+                            setDownloadProgress((prev) => {
+                                const base = prev ?? 12;
+                                return Math.min(90, base + 1);
+                            });
                         }
                     }
                 }
 
+                setDownloadStage("finalizing");
+                stopAutoProgress();
+                setDownloadProgress((prev) => Math.max(prev ?? 0, 96));
                 const combined = concatUint8Arrays(chunks);
                 const blob = new Blob([combined], { type: respContentType });
                 const url = window.URL.createObjectURL(blob);
                 const link = document.createElement("a");
                 link.href = url;
-                // choose extension based on content type
-                const ext = respContentType.includes("html") ? "html" : respContentType.includes("pdf") ? "pdf" : "bin";
-                link.download = `feedbacks-${monthKey}.${ext}`;
+                link.download = `feedbacks-${monthKey}.pdf`;
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
                 window.URL.revokeObjectURL(url);
+                setDownloadProgress(100);
+                await new Promise((resolve) => setTimeout(resolve, 350));
             } else {
                 // Fallback when streaming not available
+                setDownloadStage("finalizing");
+                stopAutoProgress();
+                setDownloadProgress((prev) => Math.max(prev ?? 0, 95));
                 const blob = await response.blob();
                 const url = window.URL.createObjectURL(blob);
                 const link = document.createElement("a");
                 link.href = url;
-                const ct = blob.type || respContentType;
-                const ext = ct.includes("html") ? "html" : ct.includes("pdf") ? "pdf" : "bin";
-                link.download = `feedbacks-${monthKey}.${ext}`;
+                link.download = `feedbacks-${monthKey}.pdf`;
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
                 window.URL.revokeObjectURL(url);
+                setDownloadProgress(100);
+                await new Promise((resolve) => setTimeout(resolve, 350));
             }
         } catch (error) {
             console.error("Print error:", error);
             alert("Failed to generate print document. Please try again.");
         } finally {
+            stopAutoProgress();
             setIsLoading(false);
             setDownloadingMonth(null);
             setDownloadProgress(null);
+            setDownloadStage(null);
         }
     };
 
@@ -230,66 +287,95 @@ export default function ArchiveClient({
     return (
         <div className="space-y-6 p-6">
             {/* Header */}
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold text-slate-900">Archive Management</h1>
-                    <p className="text-slate-600 text-sm mt-1">
-                        Manage and archive monthly feedback submissions
-                    </p>
-                </div>
-            </div>
-
-            <div className="flex items-center justify-between gap-4">
-                <ArchiveForm
-                    selectedYear={selectedYear}
-                    onYearChange={(y) => { setSelectedYear(y); setCurrentPage(1); }}
-                    availableYears={years}
-                    isLoading={isLoading}
-                    monthCount={totalMonths}
-                />
-
-                <div className="flex items-center gap-3">
-                    <Input placeholder="Search month" value={searchTerm} onChange={(e: any) => { setSearchTerm(e.target.value); setCurrentPage(1); }} className="w-56" />
-                    <select className="rounded border px-2 py-1 text-sm" value={pageSize} onChange={(e) => { setPageSize(parseInt(e.target.value, 10)); setCurrentPage(1); }}>
-                        <option value={6}>6 / page</option>
-                        <option value={9}>9 / page</option>
-                        <option value={12}>12 / page</option>
-                    </select>
-                </div>
-            </div>
-
-            {/* Stats Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card className="border-slate-200 bg-white shadow-sm">
-                    <CardContent className="pt-6">
-                        <div className="text-center">
-                            <p className="text-slate-600 text-sm font-medium">Total Feedbacks</p>
-                            <p className="text-4xl font-bold text-slate-900 mt-2">{totalFeedback ?? months.reduce((acc, m) => acc + (m.total || 0), 0)}</p>
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card className="border-slate-200 bg-white shadow-sm">
-                    <CardContent className="pt-6">
-                        <div className="text-center">
-                            <p className="text-slate-600 text-sm font-medium">Months Tracked</p>
-                            <p className="text-4xl font-bold text-slate-900 mt-2">{totalMonths}</p>
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card className="border-slate-200 bg-white shadow-sm">
-                    <CardContent className="pt-6">
-                        <div className="text-center">
-                            <p className="text-slate-600 text-sm font-medium">Answered Rate</p>
-                            <p className="text-4xl font-bold text-emerald-600 mt-2">
-                                {(() => {
-                                    const answeredSum = months.reduce((acc, m) => acc + (m.answered || 0), 0);
-                                    const totalSum = (totalFeedback ?? months.reduce((acc, m) => acc + (m.total || 0), 0));
-                                    return totalSum > 0 ? Math.round((answeredSum / totalSum) * 100) : 0;
-                                })()}%
+            <Card className="border-slate-200 bg-gradient-to-br from-white to-slate-50 shadow-sm">
+                <CardContent className="pt-6">
+                    <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                        <div>
+                            <h1 className="text-3xl font-bold tracking-tight text-slate-900">Archive Management</h1>
+                            <p className="mt-1 text-sm text-slate-600">
+                                Download monthly feedback PDFs and keep records archived in one place.
                             </p>
                         </div>
+                        <div className="grid grid-cols-3 gap-2 md:min-w-[330px]">
+                            <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-center">
+                                <p className="text-xs text-slate-500">Feedback</p>
+                                <p className="text-lg font-semibold text-slate-900">{totalFeedbackCount}</p>
+                            </div>
+                            <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-center">
+                                <p className="text-xs text-slate-500">Months</p>
+                                <p className="text-lg font-semibold text-slate-900">{totalMonths}</p>
+                            </div>
+                            <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-center">
+                                <p className="text-xs text-emerald-700">Answered</p>
+                                <p className="text-lg font-semibold text-emerald-700">{answeredRate}%</p>
+                            </div>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            {downloadingMonth && downloadProgress !== null && (
+                <Card className="border-blue-200 bg-blue-50/60 shadow-sm">
+                    <CardContent className="pt-5">
+                        <div className="mb-2 flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-2 text-sm font-medium text-blue-900">
+                                <Download className="h-4 w-4" />
+                                <span>Generating PDF for {downloadingMonth}</span>
+                            </div>
+                            <span className="text-xs font-semibold uppercase tracking-wide text-blue-700">
+                                {downloadStage === "preparing" && "Preparing"}
+                                {downloadStage === "downloading" && "Downloading"}
+                                {downloadStage === "finalizing" && "Finalizing"}
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <Progress value={downloadProgress} className="h-2.5 bg-blue-100 [&_[data-slot=progress-indicator]]:bg-blue-600" />
+                            <span className="w-12 text-right text-sm font-semibold text-blue-800">{downloadProgress}%</span>
+                        </div>
                     </CardContent>
                 </Card>
+            )}
+
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                    <ArchiveForm
+                        selectedYear={selectedYear}
+                        onYearChange={(y) => { setSelectedYear(y); setCurrentPage(1); }}
+                        availableYears={years}
+                        isLoading={isLoading}
+                        monthCount={totalMonths}
+                    />
+                    <div className="flex flex-wrap items-center gap-2">
+                        <div className="relative">
+                            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                            <Input
+                                placeholder="Search month"
+                                value={searchTerm}
+                                onChange={(e: any) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                                className="w-60 pl-8 pr-8"
+                            />
+                            {searchTerm && (
+                                <button
+                                    type="button"
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                                    onClick={() => { setSearchTerm(""); setCurrentPage(1); }}
+                                    aria-label="Clear search"
+                                >
+                                    <X className="h-3.5 w-3.5" />
+                                </button>
+                            )}
+                        </div>
+                        <select
+                            className="h-9 rounded-md border border-slate-200 bg-white px-3 text-sm"
+                            value={pageSize}
+                            onChange={(e) => { setPageSize(parseInt(e.target.value, 10)); setCurrentPage(1); }}
+                        >
+                            <option value={6}>6 / page</option>
+                            <option value={9}>9 / page</option>
+                            <option value={12}>12 / page</option>
+                        </select>
+                    </div>
+                </div>
             </div>
 
             {/* Monthly Cards Grid */}
@@ -319,7 +405,7 @@ export default function ArchiveClient({
                             <Button size="sm" variant="outline" onClick={() => window.location.reload()}>
                                 Refresh
                             </Button>
-                            <Button size="sm" onClick={() => { window.location.href = '/admin/archive'; }}>
+                            <Button size="sm" variant="admin" onClick={() => { window.location.href = '/admin/archive'; }}>
                                 Open Archive Page
                             </Button>
                         </div>
@@ -350,9 +436,9 @@ export default function ArchiveClient({
                         <div className="flex items-center justify-between mt-4">
                             <div className="text-sm text-slate-600">Showing {Math.min((currentPage - 1) * pageSize + 1, totalMonths)} to {Math.min(currentPage * pageSize, totalMonths)} of {totalMonths} months</div>
                             <div className="flex items-center gap-2">
-                                <button className="rounded border px-3 py-1 text-sm" disabled={currentPage === 1} onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}>Prev</button>
-                                <span className="text-sm">{currentPage}</span>
-                                <button className="rounded border px-3 py-1 text-sm" disabled={(currentPage * pageSize) >= totalMonths} onClick={() => setCurrentPage((p) => p + 1)}>Next</button>
+                                <Button variant="outline" size="sm" disabled={currentPage === 1} onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}>Previous</Button>
+                                <span className="rounded-md border border-slate-200 bg-white px-3 py-1 text-sm font-medium">{currentPage}</span>
+                                <Button variant="outline" size="sm" disabled={(currentPage * pageSize) >= totalMonths} onClick={() => setCurrentPage((p) => p + 1)}>Next</Button>
                             </div>
                         </div>
                     </>

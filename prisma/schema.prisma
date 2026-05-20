@@ -99,3 +99,15 @@ model ReportMetadata {
   cusatFocal          String?
   updatedAt           DateTime @updatedAt
 }
+
+model Achievement {
+  id           Int      @id @default(autoincrement())
+  title        String
+  description  String
+  imagePath    String?
+  iconName     String?
+  isActive     Boolean  @default(true)
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}

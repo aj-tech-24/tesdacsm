@@ -1,0 +1,184 @@
+/* Admin design tokens and basic layout for Phase 1 Visual Foundation */
+:root {
+  --admin-bg-start: #f5f7ff;
+  --admin-bg-end: #eef2ff;
+  --admin-surface: #ffffff;
+  --admin-accent: #2b6ef6;
+  --admin-muted: #52555f;
+  --admin-radius: 12px;
+  --admin-card-shadow: 0 6px 20px rgba(43,46,66,0.08);
+}
+
+.admin-shell {
+  min-height: 100vh;
+  background: linear-gradient(180deg, var(--admin-bg-start), var(--admin-bg-end));
+  display: block;
+  width: 100%;
+}
+
+.admin-content {
+  width: 100%;
+  max-width: none;
+}
+
+.auth-viewport {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 4rem);
+  padding: 2rem;
+}
+
+.auth-card {
+  background: var(--admin-surface);
+  border-radius: var(--admin-radius);
+  box-shadow: var(--admin-card-shadow);
+  border-top: 4px solid var(--admin-accent);
+  overflow: hidden;
+}
+
+.auth-hero {
+  width: 56px;
+  height: 56px;
+  border-radius: 9999px;
+  background: rgba(43,110,246,0.08);
+  color: var(--admin-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+}
+
+/* Improved focus ring for keyboard users */
+:focus-visible {
+  outline: 3px solid rgba(43,110,246,0.18);
+  outline-offset: 3px;
+}
+
+/* Respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+.auth-title {
+  color: #0f172a;
+  font-size: 1.375rem;
+  font-weight: 700;
+}
+
+.auth-desc {
+  color: var(--admin-muted);
+}
+
+.primary-cta {
+  width: 100%;
+  height: 44px;
+  border-radius: 10px;
+}
+
+.error-note {
+  color: #b91c1c;
+  background: #fff1f2;
+  padding: 0.5rem;
+  border-radius: 8px;
+  border: 1px solid #fecaca;
+  text-align: center;
+}
+
+/* Sidebar styles */
+.admin-sidebar {
+  background:
+    radial-gradient(circle at top, rgba(255,255,255,0.08), transparent 38%),
+    linear-gradient(180deg, #312f9f 0%, #2d2b8c 100%);
+  color: white;
+}
+.admin-sidebar .logo-area {
+  padding: 1.5rem 1.25rem 1.25rem;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.admin-sidebar .logo-area h2 {
+  color: #ffffff;
+}
+.admin-sidebar .logo-area p {
+  color: #ffffff;
+}
+.admin-sidebar .nav-list {
+  padding: 0.75rem 0.85rem;
+  width: 100%;
+  align-items: stretch;
+}
+.admin-sidebar .nav-section-title {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #ffffff;
+  padding: 0.65rem 0.8rem 0.45rem;
+  text-align: left;
+}
+.admin-sidebar .tab-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  gap: 0.75rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: 16px;
+  color: #ffffff;
+  text-align: left;
+  transition: background-color 180ms ease, transform 180ms ease, box-shadow 180ms ease, color 180ms ease;
+}
+.admin-sidebar .tab-trigger:hover {
+  background: rgba(255,255,255,0.08);
+  transform: translateX(1px);
+}
+.admin-sidebar .tab-trigger[data-state="active"] {
+  background: linear-gradient(90deg, rgba(255,255,255,0.18), rgba(255,255,255,0.12));
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12), 0 12px 26px rgba(43,46,66,0.18);
+  color: #fff;
+}
+
+.admin-sidebar .tab-trigger span:last-child {
+  color: #ffffff;
+  letter-spacing: 0.01em;
+}
+
+.admin-sidebar .sidebar-metrics {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.admin-sidebar .sidebar-metrics p:last-child {
+  text-shadow: 0 1px 2px rgba(0,0,0,0.18);
+}
+
+/* KPI / summary strip */
+.summary-strip {
+  padding: 1.25rem;
+  border-radius: 16px;
+  box-shadow: 0 6px 18px rgba(43,46,66,0.06);
+  background: var(--admin-surface);
+}
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0,1fr));
+  gap: 1rem;
+}
+.kpi-card {
+  border-radius: 12px;
+  padding: 1rem;
+  background: var(--admin-surface);
+  border: 1px solid rgba(15,23,42,0.06);
+}
+
+/* Typography rhythm */
+.admin-content h1, .admin-content h2, .admin-content h3 {
+  color: #0f172a;
+}
+.admin-content h1 { font-size: 1.5rem; font-weight: 700; }
+.admin-content h2 { font-size: 1.125rem; font-weight: 600; }
+.admin-content p { color: var(--admin-muted); }
+

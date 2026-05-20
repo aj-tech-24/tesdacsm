@@ -387,8 +387,8 @@ export default async function AdminDashboard(props: { searchParams?: Promise<{ [
     const reportMetadata = await prisma.reportMetadata.findFirst();
 
     return (
-        <div className="relative min-h-screen bg-gradient-to-br from-[#7b60ff] via-[#6f56f5] to-[#5b3fd1] print:bg-white print:p-0">
-            <main className="relative min-h-screen w-full print:m-0 print:block print:w-full print:max-w-none print:p-0">
+        <div className="relative min-h-screen print:bg-white print:p-0">
+            <main className="relative min-h-screen w-full admin-content print:m-0 print:block print:w-full print:max-w-none print:p-0">
                 <DashboardClient
                     userRole={session.role}
                     userOffice={session.office}

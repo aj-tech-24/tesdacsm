@@ -77,6 +77,8 @@
 @theme inline {
   --font-sans: 'Geist', 'Geist Fallback';
   --font-mono: 'Geist Mono', 'Geist Mono Fallback';
+  --font-playfair: var(--font-playfair);
+  --font-poppins: var(--font-poppins);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -137,5 +139,51 @@
     padding: 0;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+  }
+}
+
+@layer utilities {
+  @keyframes achieve-fade-scale {
+    0% {
+      opacity: 0;
+      transform: scale(0.98);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes achieve-slide-up {
+    0% {
+      opacity: 0;
+      transform: translateY(40px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes achieve-float {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-8px);
+    }
+  }
+
+  .animate-achieve-content {
+    animation: achieve-fade-scale 1.2s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+  }
+
+  .animate-achieve-text {
+    animation: achieve-slide-up 1.4s cubic-bezier(0.23, 1, 0.32, 1) 0.3s forwards;
+    opacity: 0;
+  }
+
+  .animate-achieve-prompt {
+    animation: achieve-float 3s ease-in-out infinite;
   }
 }

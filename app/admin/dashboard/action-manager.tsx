@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -155,7 +155,7 @@ function ActionRow({
                 {isEditing ? (
                     <Button
                         size="icon"
-                        className="h-8 w-8 bg-blue-600 text-white hover:bg-blue-700"
+                        variant="admin"
                         onClick={handleSave}
                         disabled={submittingId === f.id}
                         title="Save"
@@ -192,6 +192,17 @@ export default function ActionManager({
     const totalPages = Math.max(1, Math.ceil(feedbackList.length / pageSize));
     const paginatedList = feedbackList.slice((page - 1) * pageSize, page * pageSize);
 
+    const actionSummary = useMemo(() => {
+        const completed = feedbackList.filter((feedback) => String(feedback.actionProvided || "").trim()).length;
+        const resolved = feedbackList.filter((feedback) => String(feedback.dateResolved || "").trim()).length;
+        return {
+            total: feedbackList.length,
+            completed,
+            pending: feedbackList.length - completed,
+            resolved,
+        };
+    }, [feedbackList]);
+
     const updateAction = async (id: number, actionPassed: string, dateResolved: string, natureOfTransaction: string) => {
         setSubmittingId(id);
         try {
@@ -223,19 +234,41 @@ export default function ActionManager({
     return (
         <Card className="mt-4 rounded-xl border border-slate-200 bg-white shadow-sm">
             <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg tracking-tight text-slate-900">
-                    <ListTodo className="h-5 w-5 text-cyan-700" />
-                    Manage Actions Provided
-                </CardTitle>
-                <CardDescription>Assign specific actions taken for each feedback entry.</CardDescription>
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="space-y-1">
+                        <CardTitle className="flex items-center gap-2 text-lg tracking-tight text-slate-900">
+                            <ListTodo className="h-5 w-5 text-cyan-700" />
+                            Manage Actions Provided
+                        </CardTitle>
+                        <CardDescription>Work through pending items first, then confirm the final action and resolution details.</CardDescription>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:min-w-[420px]">
+                        <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                            <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Total</p>
+                            <p className="mt-1 text-base font-semibold text-slate-900">{actionSummary.total}</p>
+                        </div>
+                        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2">
+                            <p className="text-[11px] uppercase tracking-[0.2em] text-emerald-600">Completed</p>
+                            <p className="mt-1 text-base font-semibold text-emerald-700">{actionSummary.completed}</p>
+                        </div>
+                        <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2">
+                            <p className="text-[11px] uppercase tracking-[0.2em] text-amber-600">Pending</p>
+                            <p className="mt-1 text-base font-semibold text-amber-700">{actionSummary.pending}</p>
+                        </div>
+                        <div className="rounded-xl border border-sky-200 bg-sky-50 px-3 py-2">
+                            <p className="text-[11px] uppercase tracking-[0.2em] text-sky-600">Resolved</p>
+                            <p className="mt-1 text-base font-semibold text-sky-700">{actionSummary.resolved}</p>
+                        </div>
+                    </div>
+                </div>
             </CardHeader>
             <CardContent className="overflow-x-auto p-4 pt-0">
                 <Table>
-                    <TableHeader className="bg-slate-50/80">
+                    <TableHeader>
                         <TableRow>
                             <TableHead className="h-9 px-2 text-xs">Feedback Date</TableHead>
                             <TableHead className="h-9 px-2 text-xs">Control No.</TableHead>
-                            <TableHead className="h-9 px-2 text-xs">Client Name</TableHead>
+                            <TableHead className="h-9 px-2 text-xs">Client</TableHead>
                             <TableHead className="h-9 w-64 px-2 text-xs">Service Availed</TableHead>
                             <TableHead className="h-9 px-2 text-xs">Nature of Transaction</TableHead>
                             <TableHead className="h-9 w-40 px-2 text-xs">Action Provided</TableHead>

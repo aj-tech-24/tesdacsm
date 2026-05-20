@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useCallback, useEffect, useMemo } from "react"
+import { useState, useCallback, useEffect, useMemo, useRef } from "react"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { FormHeader } from "@/components/form-header"
 import { ClientInfoSection } from "@/components/client-info-section"
@@ -8,11 +9,46 @@ import { CitizensCharterSection } from "@/components/citizens-charter-section"
 import { ServiceQualitySection } from "@/components/service-quality-section"
 import { SuggestionsSection } from "@/components/suggestions-section"
 import { OfficeSelection } from "@/components/office-selection"
-import { Emoji3D } from "@/components/emoji-3d"
+import { Emoji3D, FLUENT_EMOJI_OPTIONS } from "@/components/emoji-3d"
 import { buildClientFeedbackPrintHtml, type FeedbackPrintSnapshot } from "@/lib/csm-print-template"
-import { Send, ArrowLeft } from "lucide-react"
+import { Send, ArrowLeft, Users, Award, Building2, MousePointerClick } from "lucide-react"
+import * as LucideIcons from "lucide-react"
+import * as HeroIcons from "@heroicons/react/24/outline"
 
 const SELECTED_OFFICE_KEY = "selectedOffice"
+const ACHIEVEMENTS_VERSION_KEY = "achievementsVersion"
+const ACHIEVEMENTS_VERSION_CHANNEL = "achievementsVersionChannel"
+const IDLE_TIMEOUT_MS = 20_000
+
+type ScreensaverAchievement = {
+  title: string
+  detail: string
+  imagePath?: string | null
+  iconName?: string | null
+}
+
+const DEFAULT_TESDA_ACHIEVEMENTS: ScreensaverAchievement[] = [
+  {
+    title: "Customer Service Excellence",
+    detail: "Strengthened front-line support for TVET clients across Davao del Sur transactions.",
+  },
+  {
+    title: "Training Program Expansion",
+    detail: "Expanded competency-based programs to reach more communities and partner institutions.",
+  },
+  {
+    title: "Assessment and Certification Reach",
+    detail: "Increased opportunities for workers and learners to earn recognized TESDA certifications.",
+  },
+  {
+    title: "Industry and LGU Partnerships",
+    detail: "Sustained collaboration with local stakeholders to align training with workforce needs.",
+  },
+  {
+    title: "Continuous Service Improvement",
+    detail: "Used client feedback and CSM insights to improve service delivery quality and responsiveness.",
+  },
+]
 
 const getStoredOffice = () => {
   if (typeof window === "undefined") return ""
@@ -24,6 +60,10 @@ export default function ClientSatisfactionForm() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isOfficeReady, setIsOfficeReady] = useState(false)
   const [submittedSnapshot, setSubmittedSnapshot] = useState<FeedbackPrintSnapshot | null>(null)
+  const [isIdleScreensaverVisible, setIsIdleScreensaverVisible] = useState(false)
+  const [screensaverAchievements, setScreensaverAchievements] = useState<ScreensaverAchievement[]>(DEFAULT_TESDA_ACHIEVEMENTS)
+  const [achievementsVersion, setAchievementsVersion] = useState("0")
+  const idleTimerRef = useRef<number | null>(null)
 
   const [clientInfo, setClientInfo] = useState({
     office: "",
@@ -68,6 +108,149 @@ export default function ClientSatisfactionForm() {
     })
     setIsOfficeReady(true)
   }, [])
+
+  const hideScreensaver = useCallback(() => {
+    setIsIdleScreensaverVisible(false)
+  }, [])
+
+  const restartIdleTimer = useCallback(() => {
+    if (idleTimerRef.current) {
+      window.clearTimeout(idleTimerRef.current)
+    }
+    idleTimerRef.current = window.setTimeout(() => {
+      setIsIdleScreensaverVisible(true)
+    }, IDLE_TIMEOUT_MS)
+  }, [])
+
+  useEffect(() => {
+    const handleClickDismiss = () => {
+      if (isIdleScreensaverVisible) {
+        hideScreensaver()
+      }
+    }
+
+    const handleActivity = () => {
+      restartIdleTimer()
+    }
+
+    // Only click dismisses the screensaver
+    window.addEventListener("click", handleClickDismiss, { passive: true })
+
+    // All other activities restart the idle timer
+    const events: Array<keyof WindowEventMap> = [
+      "mousemove",
+      "mousedown",
+      "keydown",
+      "touchstart",
+      "scroll",
+    ]
+
+    for (const eventName of events) {
+      window.addEventListener(eventName, handleActivity, { passive: true })
+    }
+
+    restartIdleTimer()
+
+    return () => {
+      window.removeEventListener("click", handleClickDismiss)
+      for (const eventName of events) {
+        window.removeEventListener(eventName, handleActivity)
+      }
+      if (idleTimerRef.current) {
+        window.clearTimeout(idleTimerRef.current)
+      }
+    }
+  }, [hideScreensaver, isIdleScreensaverVisible, restartIdleTimer])
+
+
+
+  const loadAchievements = useCallback(async (signal?: AbortSignal) => {
+    try {
+      const version = achievementsVersion
+      const response = await fetch(`/api/achievements?v=${encodeURIComponent(version)}`, {
+        cache: "no-store",
+        signal,
+      })
+      const payload = await response.json()
+      if (!response.ok || !payload?.success) return
+
+      const mapped = (payload.items || [])
+        .map((item: any) => ({
+          title: String(item?.title || "").trim(),
+          detail: String(item?.description || "").trim(),
+          imagePath: item?.imagePath ? String(item.imagePath) : null,
+          iconName: item?.iconName ? String(item.iconName) : null,
+        }))
+        .filter((item: ScreensaverAchievement) => item.title && item.detail)
+
+      if (mapped.length > 0) {
+        setScreensaverAchievements(mapped)
+      }
+    } catch (error) {
+      if ((error as any)?.name !== "AbortError") {
+        // Keep defaults when API call fails.
+      }
+    }
+  }, [achievementsVersion])
+
+  useEffect(() => {
+    const controller = new AbortController()
+    void loadAchievements(controller.signal)
+
+    return () => {
+      controller.abort()
+    }
+  }, [loadAchievements])
+
+  useEffect(() => {
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key !== ACHIEVEMENTS_VERSION_KEY) return
+      setAchievementsVersion(event.newValue || "0")
+    }
+
+    const channel = typeof BroadcastChannel !== "undefined"
+      ? new BroadcastChannel(ACHIEVEMENTS_VERSION_CHANNEL)
+      : null
+
+    const handleMessage = (event: MessageEvent) => {
+      setAchievementsVersion(String(event.data || "0"))
+    }
+
+    window.addEventListener("storage", handleStorage)
+    channel?.addEventListener("message", handleMessage)
+
+    return () => {
+      window.removeEventListener("storage", handleStorage)
+      channel?.removeEventListener("message", handleMessage)
+      channel?.close()
+    }
+  }, [loadAchievements])
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+
+    let lastVersion = localStorage.getItem(ACHIEVEMENTS_VERSION_KEY) || "0"
+    const interval = window.setInterval(() => {
+      const nextVersion = localStorage.getItem(ACHIEVEMENTS_VERSION_KEY) || "0"
+      if (nextVersion !== lastVersion) {
+        lastVersion = nextVersion
+        setAchievementsVersion(nextVersion)
+      }
+    }, 1000)
+
+    return () => window.clearInterval(interval)
+  }, [])
+
+  useEffect(() => {
+    if (!isIdleScreensaverVisible) return
+
+    const controller = new AbortController()
+    void loadAchievements(controller.signal)
+
+    return () => {
+      controller.abort()
+    }
+  }, [isIdleScreensaverVisible, loadAchievements, achievementsVersion])
 
   const handleCcChange = useCallback((field: string, value: string) => {
     setCcQuestions(prev => ({ ...prev, [field]: value }))
@@ -245,6 +428,12 @@ export default function ClientSatisfactionForm() {
   if (isSubmitted) {
     return (
       <main className="relative min-h-screen overflow-hidden bg-gradient-to-br from-cyan-50 via-white to-blue-50 py-10 px-4">
+        {isIdleScreensaverVisible && (
+          <IdleAchievementsScreensaver
+            achievements={screensaverAchievements}
+            onWake={hideScreensaver}
+          />
+        )}
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute top-[-8rem] left-[-5rem] h-72 w-72 rounded-full bg-cyan-200/40 blur-3xl" />
           <div className="absolute bottom-[-9rem] right-[-4rem] h-80 w-80 rounded-full bg-blue-200/40 blur-3xl" />
@@ -287,16 +476,39 @@ export default function ClientSatisfactionForm() {
 
   if (!isOfficeReady) {
     return (
-      <main className="min-h-screen bg-background py-8 px-4" />
+      <main className="relative min-h-screen bg-background py-8 px-4">
+        {isIdleScreensaverVisible && (
+          <IdleAchievementsScreensaver
+            achievements={screensaverAchievements}
+            onWake={hideScreensaver}
+          />
+        )}
+      </main>
     )
   }
 
   if (!clientInfo.office) {
-    return <OfficeSelection onSelect={(office) => handleClientInfoChange("office", office)} />
+    return (
+      <>
+        {isIdleScreensaverVisible && (
+          <IdleAchievementsScreensaver
+            achievements={screensaverAchievements}
+            onWake={hideScreensaver}
+          />
+        )}
+        <OfficeSelection onSelect={(office) => handleClientInfoChange("office", office)} />
+      </>
+    )
   }
 
   return (
-    <main className="min-h-screen bg-background py-8 px-4">
+    <main className="relative min-h-screen bg-background py-8 px-4">
+      {isIdleScreensaverVisible && (
+        <IdleAchievementsScreensaver
+          achievements={screensaverAchievements}
+          onWake={hideScreensaver}
+        />
+      )}
       <div className="max-w-4xl mx-auto">
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Back Button */}
@@ -363,3 +575,110 @@ export default function ClientSatisfactionForm() {
     </main>
   )
 }
+
+// Map achievement keywords to lucide icons
+function getIconForAchievement(achievement: ScreensaverAchievement) {
+  if (achievement.iconName) {
+    const hero = (HeroIcons as Record<string, any>)[achievement.iconName]
+    if (hero) return hero
+    const icon = (LucideIcons as Record<string, any>)[achievement.iconName]
+    if (icon) return icon
+  }
+
+  const text = `${achievement.title} ${achievement.detail}`.toLowerCase()
+  if (text.includes("graduate") || text.includes("student") || text.includes("people")) return Users
+  if (text.includes("award") || text.includes("excellence") || text.includes("outstanding")) return Award
+  if (text.includes("industry") || text.includes("partner") || text.includes("business")) return Building2
+  return Award // fallback
+}
+
+function IdleAchievementsScreensaver({
+  achievements,
+  onWake,
+}: {
+  achievements: ScreensaverAchievement[]
+  onWake: () => void
+}) {
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (!mounted || achievements.length === 0) return
+
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % achievements.length)
+    }, 6000) // rotate every 6 seconds
+
+    return () => clearInterval(interval)
+  }, [mounted, achievements.length])
+
+  if (!mounted || achievements.length === 0) return null
+
+  const currentAchievement = achievements[currentIndex]
+  const Icon = getIconForAchievement(currentAchievement)
+
+  return (
+    <div
+      className="fixed inset-0 z-[9999] bg-black animate-fade-in flex items-center justify-center overflow-hidden"
+      onClick={onWake}
+      onMouseDown={onWake}
+      onTouchStart={onWake}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") onWake()
+      }}
+      aria-label="Idle screensaver showing TESDA Davao del Sur achievements. Tap to continue."
+    >
+      {/* Background Images */}
+      {achievements.map((item, index) => (
+        <div
+          key={index}
+          className={`absolute inset-0 transition-opacity duration-1500 ${index === currentIndex ? 'opacity-100' : 'opacity-0'}`}
+        >
+          <div className="absolute inset-0 bg-black/30 z-10" /> {/* Overlay for text readability */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent z-10" />
+          {item.imagePath ? (
+            <img
+              src={item.imagePath}
+              alt={item.title}
+              className={`absolute inset-0 w-full h-full object-cover object-center transition-transform duration-[12000ms] ease-linear ${index === currentIndex ? 'scale-110' : 'scale-100'}`}
+            />
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900" />
+          )}
+        </div>
+      ))}
+
+      {/* Content */}
+      <div className="relative z-20 max-w-5xl mx-auto px-6 text-center space-y-8 mt-20">
+        <div key={currentIndex} className="animate-achieve-content">
+          <div className="inline-flex items-center justify-center w-36 h-36 md:w-44 md:h-44 mb-8">
+            <Icon className="w-20 h-20 md:w-28 md:h-28 text-white" />
+          </div>
+          <div className="animate-achieve-text space-y-4">
+            <h2 className="text-5xl md:text-7xl font-black text-white tracking-tighter drop-shadow-2xl" style={{ fontFamily: 'var(--font-playfair, serif)', letterSpacing: '-0.02em' }}>
+              {currentAchievement.title}
+            </h2>
+            <p className="text-lg md:text-2xl text-white/85 max-w-3xl mx-auto leading-relaxed drop-shadow-lg" style={{ fontFamily: 'var(--font-poppins, sans-serif)', fontWeight: 500 }}>
+              {currentAchievement.detail}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom interaction prompt */}
+      <div className="absolute bottom-12 left-0 right-0 z-20 flex justify-center">
+        <div className="animate-achieve-prompt flex items-center gap-3 px-6 py-3 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white/90 shadow-lg" style={{ fontFamily: 'var(--font-poppins, sans-serif)' }}>
+          <MousePointerClick className="w-5 h-5" />
+          <span className="font-medium tracking-wide">Press any key to return</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+

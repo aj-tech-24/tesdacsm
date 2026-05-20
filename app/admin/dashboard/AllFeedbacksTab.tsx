@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getServicesForOfficeAndTransactions } from "@/lib/services-data";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 
 const safeFileNamePart = (value: string) => {
     const cleaned = value.replace(/[^a-zA-Z0-9\s_-]/g, "").trim().replace(/\s+/g, "_");
@@ -203,6 +204,30 @@ export default function AllFeedbacksTab({ feedbackList, reportPeriodLabel }: { f
         if (!editForm.office || !editForm.transactionTypes) return [];
         return getServicesForOfficeAndTransactions(editForm.office, [editForm.transactionTypes]);
     }, [editForm.office, editForm.transactionTypes]);
+
+    const feedbackSummary = useMemo(() => {
+        const withAction = sortedFeedbackList.filter((row) => asText(row.actionProvided).trim()).length;
+        const withResolution = sortedFeedbackList.filter((row) => asText(row.dateResolved).trim()).length;
+        const inquiries = sortedFeedbackList.filter((row) => asText(row.natureOfTransaction).toLowerCase().includes("inquiry")).length;
+        const complaints = sortedFeedbackList.filter((row) => asText(row.natureOfTransaction).toLowerCase().includes("complaint")).length;
+        return { withAction, withResolution, inquiries, complaints };
+    }, [sortedFeedbackList]);
+
+    const getActionStatus = (row: any) => {
+        const actionProvided = asText(row.actionProvided).trim();
+        const resolved = asText(row.dateResolved).trim();
+        if (actionProvided && resolved) return { label: "Resolved", className: "border-emerald-200 bg-emerald-50 text-emerald-700" };
+        if (actionProvided) return { label: "In progress", className: "border-amber-200 bg-amber-50 text-amber-700" };
+        return { label: "Needs action", className: "border-rose-200 bg-rose-50 text-rose-700" };
+    };
+
+    const getOfficeChip = (office: string) => {
+        const raw = asText(office).trim().toUpperCase();
+        if (raw.includes("CCNTS")) return "CCNTS";
+        if (raw.includes("PTC")) return "PTC";
+        if (raw.includes("PO") || raw.includes("PROVIN")) return "PO";
+        return raw || "Unknown";
+    };
 
     const getTransactionTypes = (value: unknown): string[] => {
         if (Array.isArray(value)) return value.map((item) => String(item).trim()).filter(Boolean);
@@ -444,6 +469,24 @@ export default function AllFeedbacksTab({ feedbackList, reportPeriodLabel }: { f
                         {isGeneratingReport ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} Generate Report
                     </Button>
                 </div>
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                        <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">All records</p>
+                        <p className="mt-1 text-base font-semibold text-slate-900">{sortedFeedbackList.length}</p>
+                    </div>
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                        <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">With action</p>
+                        <p className="mt-1 text-base font-semibold text-slate-900">{feedbackSummary.withAction}</p>
+                    </div>
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                        <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Resolved</p>
+                        <p className="mt-1 text-base font-semibold text-slate-900">{feedbackSummary.withResolution}</p>
+                    </div>
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                        <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Inquiry / complaint</p>
+                        <p className="mt-1 text-base font-semibold text-slate-900">{feedbackSummary.inquiries} / {feedbackSummary.complaints}</p>
+                    </div>
+                </div>
             </CardHeader>
             <CardContent className="overflow-x-auto p-4 pt-0">
                 <Table>
@@ -465,6 +508,7 @@ export default function AllFeedbacksTab({ feedbackList, reportPeriodLabel }: { f
                             <TableHead className="h-9 px-2 text-xs">Client Name</TableHead>
                             <TableHead className="h-9 px-2 text-xs">Office</TableHead>
                             <TableHead className="h-9 px-2 text-xs">Service</TableHead>
+                            <TableHead className="h-9 px-2 text-xs">Status</TableHead>
                             <TableHead className="h-9 px-2 text-xs">Action Provided</TableHead>
                             <TableHead className="h-9 w-[96px] px-2 text-center text-xs">Action</TableHead>
                         </TableRow>
@@ -472,15 +516,32 @@ export default function AllFeedbacksTab({ feedbackList, reportPeriodLabel }: { f
                     <TableBody>
                         {paginatedRows.map((row) => (
                             <TableRow key={row.id} data-feedback-id={row.id}>
-                                <TableCell className="px-2 py-2 text-xs">{formatDateForDisplay(row.formDate)}</TableCell>
-                                <TableCell className="px-2 py-2 text-xs">{row.controlNumber || ""}</TableCell>
-                                <TableCell className="px-2 py-2 text-xs">{row.name || "Anonymous"}</TableCell>
-                                <TableCell className="px-2 py-2 text-xs">{row.office || ""}</TableCell>
+                                <TableCell className="px-2 py-2 text-xs text-slate-600">{formatDateForDisplay(row.formDate)}</TableCell>
+                                <TableCell className="px-2 py-2 text-xs font-medium text-slate-700">{row.controlNumber || ""}</TableCell>
+                                <TableCell className="px-2 py-2 text-xs">
+                                    <div className="flex flex-col gap-1">
+                                        <span className="font-medium text-slate-900">{row.name || "Anonymous"}</span>
+                                        <span className="text-[11px] uppercase tracking-[0.16em] text-slate-500">{asText(row.clientType) || "Did not specify"}</span>
+                                    </div>
+                                </TableCell>
+                                <TableCell className="px-2 py-2 text-xs">
+                                    <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-700">
+                                        {getOfficeChip(row.office)}
+                                    </Badge>
+                                </TableCell>
                                 <TableCell className="max-w-[220px] truncate px-2 py-2 text-xs" title={row.citizensCharterService || ""}>
-                                    {row.citizensCharterService || ""}
+                                    <div className="flex flex-col gap-1">
+                                        <span className="truncate text-slate-900">{row.citizensCharterService || ""}</span>
+                                        <span className="text-[11px] text-slate-500">{asText(row.natureOfTransaction) || "Unclassified"}</span>
+                                    </div>
+                                </TableCell>
+                                <TableCell className="px-2 py-2 text-xs">
+                                    <Badge variant="outline" className={getActionStatus(row).className}>
+                                        {getActionStatus(row).label}
+                                    </Badge>
                                 </TableCell>
                                 <TableCell className="max-w-[200px] truncate px-2 py-2 text-xs" title={row.actionProvided || ""}>
-                                    {row.actionProvided || ""}
+                                    {row.actionProvided || "Pending review"}
                                 </TableCell>
                                 <TableCell className="px-2 py-2">
                                     <div className="flex items-center justify-center gap-2">

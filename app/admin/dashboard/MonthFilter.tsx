@@ -144,10 +144,10 @@ export default function MonthFilter({ children, totalResponses, reportPeriodLabe
                         </Select>
 
                         <div className="flex items-center gap-2">
-                            <Button onClick={handleApply} size="sm" variant="default" disabled={isApplying} className="h-9 gap-2 bg-slate-900 px-3 text-xs hover:bg-slate-800 disabled:cursor-wait disabled:opacity-80">
-                                {isApplying ? <Loader2 className="h-4 w-4 animate-spin" /> : <Filter className="h-4 w-4" />}
-                                {isApplying ? "Applying..." : "Apply Filter"}
-                            </Button>
+                            <Button onClick={handleApply} size="sm" variant="admin" disabled={isApplying} className="h-9 gap-2 px-3 text-xs">
+                                    {isApplying ? <Loader2 className="h-4 w-4 animate-spin" /> : <Filter className="h-4 w-4" />}
+                                    {isApplying ? "Applying..." : "Apply Filter"}
+                                </Button>
 
                             {hasActiveFilters ? (
                                 <Button
@@ -156,7 +156,7 @@ export default function MonthFilter({ children, totalResponses, reportPeriodLabe
                                     size="sm"
                                     onClick={handleClear}
                                     disabled={isApplying}
-                                    className="h-9 px-3 text-xs text-slate-600 hover:bg-slate-100"
+                                    className="h-9 px-3 text-xs"
                                 >
                                     Clear filters
                                 </Button>

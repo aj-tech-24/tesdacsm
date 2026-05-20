@@ -49,12 +49,12 @@ export async function handleBulkPrint(req: Request, deps: BulkPrintDependencies 
             );
         }
 
-        const { monthKey, format = "html" } = await req.json();
+        const { monthKey, format } = await req.json();
 
-        // Validate format
-        if (!["html", "pdf"].includes(format)) {
+        // This endpoint is PDF-only. Keep validation strict to avoid unexpected output types.
+        if (format && format !== "pdf") {
             return NextResponse.json(
-                { success: false, error: "Invalid format (expected 'html' or 'pdf')" },
+                { success: false, error: "Invalid format (expected 'pdf')" },
                 { status: 400 }
             );
         }
@@ -113,17 +113,7 @@ export async function handleBulkPrint(req: Request, deps: BulkPrintDependencies 
         // Generate combined HTML pages using the CSM print template (inline images as data URIs)
         const html = await generateCombinedPrintHTML(filteredFeedbacks, monthKey, logoUrl);
 
-        if (format === "html") {
-            return new NextResponse(html, {
-                status: 200,
-                headers: {
-                    "Content-Type": "text/html; charset=utf-8",
-                    "Content-Disposition": `attachment; filename="feedbacks-${monthKey}.html"`,
-                },
-            });
-        }
-
-        // Try to generate PDF using Puppeteer
+        // Generate PDF using Puppeteer
         try {
             // Allow overriding the Chromium/Chrome executable via env var `CHROME_EXECUTABLE_PATH`.
             const execPath = typeof process !== 'undefined' ? process.env.CHROME_EXECUTABLE_PATH : undefined;
@@ -137,7 +127,7 @@ export async function handleBulkPrint(req: Request, deps: BulkPrintDependencies 
 
             try {
                 const page = await browser.newPage();
-                await page.setContent(html, { waitUntil: "networkidle0" });
+                await page.setContent(html, { waitUntil: "domcontentloaded" });
                 const pdfBuffer = await page.pdf({
                     format: "A4",
                     printBackground: true,
@@ -148,8 +138,10 @@ export async function handleBulkPrint(req: Request, deps: BulkPrintDependencies 
                         left: "10mm",
                     },
                 });
+                const pdfBody = new Uint8Array(pdfBuffer.byteLength);
+                pdfBody.set(pdfBuffer);
 
-                return new NextResponse(pdfBuffer, {
+                return new NextResponse(pdfBody, {
                     status: 200,
                     headers: {
                         "Content-Type": "application/pdf",
@@ -161,14 +153,10 @@ export async function handleBulkPrint(req: Request, deps: BulkPrintDependencies 
             }
         } catch (err) {
             console.warn("PDF generation failed with Puppeteer:", err);
-            // Fall back to returning the HTML as an attachment so users can print-to-PDF in browser
-            return new NextResponse(html, {
-                status: 200,
-                headers: {
-                    "Content-Type": "text/html; charset=utf-8",
-                    "Content-Disposition": `attachment; filename="feedbacks-${monthKey}.html"`,
-                },
-            });
+            return NextResponse.json(
+                { success: false, error: "Failed to generate PDF for this batch" },
+                { status: 500 }
+            );
         }
     } catch (error: any) {
         console.error("Bulk Print Error:", error);
@@ -258,7 +246,13 @@ export async function generateCombinedPrintHTML(feedbacks: FeedbackRow[], monthK
             },
         } as any;
 
-        return buildClientFeedbackPrintHtml(snapshot, f.formDate || new Date().toISOString(), logoUrl, assets);
+        const formDateForTemplate = typeof f.formDate === "string"
+            ? f.formDate
+            : f.formDate instanceof Date
+                ? f.formDate.toISOString()
+                : new Date().toISOString();
+
+        return buildClientFeedbackPrintHtml(snapshot, formDateForTemplate, logoUrl, assets);
     });
 
     // Wrap each page and ensure page-breaks for printing

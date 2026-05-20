@@ -87,3 +87,15 @@ export const Emoji3D = memo(function Emoji3D({ emoji, size = 32, className = "",
         </span>
     )
 })
+
+// Export a simple options list derived from the map so other components can
+// present a searchable/selectable list of Fluent Emoji choices.
+export const FLUENT_EMOJI_OPTIONS: { emoji: string; name: string }[] = Object.entries(fluentEmojiMap).map(([emoji, src]) => {
+    // Try to extract a readable name from the asset path, fallback to the emoji itself
+    const parts = src.split('/')
+    // typically .../assets/<Human%20Name>/3D/<file>.png -> pick the segment before the '3D' folder
+    const idx = parts.findIndex((p) => p === '3D')
+    const rawName = idx > 0 ? parts[idx - 1] : parts[parts.length - 2]
+    const name = decodeURIComponent(rawName || emoji)
+    return { emoji, name }
+})

@@ -22,6 +22,7 @@ interface Props {
 const COLORS = ["#0ea5e9", "#f97316", "#14b8a6", "#f43f5e", "#06b6d4", "#84cc16", "#f59e0b", "#0891b2", "#64748b"];
 const chartCardClass = "rounded-xl border border-slate-200 bg-white shadow-sm";
 const chartCardTitleClass = "text-sm font-semibold tracking-tight text-slate-900";
+const chartCardCaptionClass = "mt-1 text-xs leading-5 text-slate-500";
 
 export default function DashboardVisualizations({
     totalResponses, genderData, ageData, customerTypeData, transactionData, natureData, serviceData, ccData, actionData, sqdResults
@@ -100,12 +101,21 @@ export default function DashboardVisualizations({
                 </Card>
             </section>
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3 md:p-4">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                    <div>
+                        <h3 className="text-base font-semibold text-slate-900">Analytics detail</h3>
+                        <p className="text-sm text-slate-600">Each card explains one slice of the dashboard so the page reads from summary to detail.</p>
+                    </div>
+                    <p className="hidden text-xs font-medium uppercase tracking-[0.24em] text-slate-400 md:block">Charts</p>
+                </div>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <Card className={chartCardClass}>
                 <CardHeader className="pb-2">
                     <CardTitle className={`flex items-center gap-2 ${chartCardTitleClass}`}>
                         <UserCircle2 className="h-5 w-5 text-sky-600" /> Customers by Gender
                     </CardTitle>
+                    <p className={chartCardCaptionClass}>Breaks respondents by gender so demographic balance is visible at a glance.</p>
                 </CardHeader>
                 <CardContent className="h-[260px] pt-0">
                     <ResponsiveContainer width="100%" height="100%">
@@ -125,6 +135,7 @@ export default function DashboardVisualizations({
                     <CardTitle className={`flex items-center gap-2 ${chartCardTitleClass}`}>
                         <Users className="h-5 w-5 text-cyan-700" /> Age Distribution
                     </CardTitle>
+                    <p className={chartCardCaptionClass}>Shows the age spread of respondents to help identify which groups are most represented.</p>
                 </CardHeader>
                 <CardContent className="h-[260px] pt-0">
                     <ResponsiveContainer width="100%" height="100%">
@@ -144,6 +155,7 @@ export default function DashboardVisualizations({
                     <CardTitle className={`flex items-center gap-2 ${chartCardTitleClass}`}>
                         <Shapes className="h-5 w-5 text-emerald-600" /> Customer Type
                     </CardTitle>
+                    <p className={chartCardCaptionClass}>Compares citizen, business, and government respondents across the selected period.</p>
                 </CardHeader>
                 <CardContent className="h-[260px] pt-0">
                     <ResponsiveContainer width="100%" height="100%">
@@ -163,6 +175,7 @@ export default function DashboardVisualizations({
                     <CardTitle className={`flex items-center gap-2 ${chartCardTitleClass}`}>
                         <FileText className="h-5 w-5 text-orange-600" /> Transaction Types
                     </CardTitle>
+                    <p className={chartCardCaptionClass}>Ranks the most common transaction categories so the busiest services stand out immediately.</p>
                 </CardHeader>
                 <CardContent className="h-[260px] pt-0">
                     <ResponsiveContainer width="100%" height="100%">
@@ -182,6 +195,7 @@ export default function DashboardVisualizations({
                     <CardTitle className={`flex items-center gap-2 ${chartCardTitleClass}`}>
                         <HelpCircle className="h-5 w-5 text-amber-600" /> Nature of Transaction
                     </CardTitle>
+                    <p className={chartCardCaptionClass}>Separates inquiries from complaints to make issue volume easier to scan.</p>
                 </CardHeader>
                 <CardContent className="h-[260px] pt-0">
                     <ResponsiveContainer width="100%" height="100%">
@@ -201,6 +215,7 @@ export default function DashboardVisualizations({
                     <CardTitle className={`flex items-center gap-2 ${chartCardTitleClass}`}>
                         <TrendingUp className="h-5 w-5 text-teal-600" /> Service Rendered
                     </CardTitle>
+                    <p className={chartCardCaptionClass}>Lists citizen charter services by volume, with the tallest bars highlighting the most requested services.</p>
                 </CardHeader>
                 <CardContent className="h-[400px] overflow-y-auto overflow-x-hidden px-1 pt-0 custom-scrollbar">
                     <div style={{ height: `${serviceChartHeight}px`, width: '100%' }}>
@@ -222,6 +237,7 @@ export default function DashboardVisualizations({
                     <CardTitle className={`flex items-center gap-2 ${chartCardTitleClass}`}>
                         <Activity className="h-5 w-5 text-sky-600" /> Citizen's Charter
                     </CardTitle>
+                    <p className={chartCardCaptionClass}>The three CC questions are shown together so compliance and clarity can be reviewed in one place.</p>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-4 pt-0">
                     <div className="flex h-[260px] flex-col gap-3 md:flex-row">
@@ -298,6 +314,7 @@ export default function DashboardVisualizations({
                     <CardTitle className={`flex items-center gap-2 ${chartCardTitleClass}`}>
                         <CheckCircle2 className="h-5 w-5 text-emerald-600" /> Action Provided
                     </CardTitle>
+                    <p className={chartCardCaptionClass}>Shows how feedback was handled so response patterns are easier to understand.</p>
                 </CardHeader>
                 <CardContent className="h-[340px] pt-0">
                     <ResponsiveContainer width="100%" height="100%">
@@ -317,6 +334,7 @@ export default function DashboardVisualizations({
                     <CardTitle className={`flex items-center gap-2 ${chartCardTitleClass}`}>
                         <TrendingUp className="h-5 w-5 text-orange-600" /> Service Quality Dimensions (SQD)
                     </CardTitle>
+                    <p className={chartCardCaptionClass}>Displays the distribution of SQD ratings across all dimensions for a quick quality readout.</p>
                 </CardHeader>
                 <CardContent className="h-[380px] pt-0">
                     <ResponsiveContainer width="100%" height="100%">
@@ -336,6 +354,7 @@ export default function DashboardVisualizations({
                     </ResponsiveContainer>
                 </CardContent>
             </Card>
+                </div>
             </div>
         </div>
     );
