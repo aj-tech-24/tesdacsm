@@ -7,6 +7,9 @@ import chromium from "chrome-aws-lambda";
 import fs from "fs/promises";
 import path from "path";
 
+// Ensure this route runs on the Node runtime (required for Puppeteer)
+export const runtime = "nodejs";
+
 type Session = Awaited<ReturnType<typeof getSession>>;
 type FeedbackRow = {
     id?: number | string;
@@ -132,6 +135,9 @@ export async function handleBulkPrint(req: Request, deps: BulkPrintDependencies 
             }
             if (execPath) launchOpts.executablePath = execPath;
 
+            // Diagnostic log so we can see what executable path (if any) the server will use.
+            console.info("Puppeteer execPath:", execPath ?? "(none)");
+
             const browser = await browserLauncher(launchOpts);
 
             try {
@@ -160,8 +166,9 @@ export async function handleBulkPrint(req: Request, deps: BulkPrintDependencies 
             } finally {
                 await browser.close();
             }
-        } catch (err) {
-            console.warn("PDF generation failed with Puppeteer:", err);
+        } catch (err: any) {
+            console.warn("PDF generation failed with Puppeteer:", err?.message || err);
+            if (err && err.stack) console.warn(err.stack);
 
             // Fallback: return the HTML so the browser can open and print manually.
             // This avoids a hard failure for environments where Chromium is not
