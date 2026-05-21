@@ -176,6 +176,9 @@ export default function ArchiveClient({
             // Try to stream the response to provide progress updates when Content-Length is present
             const contentLength = Number(response.headers.get("Content-Length") || response.headers.get("content-length") || 0);
             const respContentType = response.headers.get("content-type") || "application/octet-stream";
+            const pdfFallback = response.headers.get("x-pdf-fallback") === "puppeteer-failed";
+            const isPdf = respContentType.includes("application/pdf") && !pdfFallback;
+            const downloadName = isPdf ? `feedbacks-${monthKey}.pdf` : `feedbacks-${monthKey}.html`;
             setDownloadStage("downloading");
             if (contentLength > 0) {
                 stopAutoProgress();
@@ -215,7 +218,7 @@ export default function ArchiveClient({
                 const url = window.URL.createObjectURL(blob);
                 const link = document.createElement("a");
                 link.href = url;
-                link.download = `feedbacks-${monthKey}.pdf`;
+                link.download = downloadName;
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
@@ -231,7 +234,7 @@ export default function ArchiveClient({
                 const url = window.URL.createObjectURL(blob);
                 const link = document.createElement("a");
                 link.href = url;
-                link.download = `feedbacks-${monthKey}.pdf`;
+                link.download = downloadName;
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
