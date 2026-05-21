@@ -3,12 +3,38 @@ import { SignJWT } from "jose";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { createRateLimitResponse, enforceRateLimit, rejectIfRequestTooLarge } from "@/lib/request-protection";
 
 const secretKey = process.env.SESSION_SECRET || "default_super_secret_key_change_me_later";
 const encodedKey = new TextEncoder().encode(secretKey);
 
 export async function POST(req: NextRequest) {
     try {
+        const oversizedResponse = rejectIfRequestTooLarge(req, 16 * 1024)
+        if (oversizedResponse) {
+            return oversizedResponse
+        }
+
+        const burstLimit = await enforceRateLimit(req, {
+            scope: "admin-login:burst",
+            limit: 5,
+            windowMs: 60 * 1000,
+        })
+
+        if (!burstLimit.allowed) {
+            return createRateLimitResponse(burstLimit)
+        }
+
+        const sustainedLimit = await enforceRateLimit(req, {
+            scope: "admin-login:sustained",
+            limit: 20,
+            windowMs: 15 * 60 * 1000,
+        })
+
+        if (!sustainedLimit.allowed) {
+            return createRateLimitResponse(sustainedLimit)
+        }
+
         const { username, password } = await req.json();
 
         if (!username || !password) {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { renderToBuffer } from '@react-pdf/renderer'
 import React from 'react'
 import { buildClientFeedbackPrintHtml } from '@/lib/csm-print-template'
+import { createRateLimitResponse, enforceRateLimit, rejectIfRequestTooLarge } from '@/lib/request-protection'
 
 // Simple HTML to PDF using server-side rendering
 async function htmlToPdf(htmlString: string): Promise<Buffer> {
@@ -13,6 +14,31 @@ async function htmlToPdf(htmlString: string): Promise<Buffer> {
 
 export async function POST(request: NextRequest) {
   try {
+    const oversizedResponse = rejectIfRequestTooLarge(request, 256 * 1024)
+    if (oversizedResponse) {
+      return oversizedResponse
+    }
+
+    const burstLimit = await enforceRateLimit(request, {
+      scope: 'print-feedback:burst',
+      limit: 12,
+      windowMs: 60 * 1000,
+    })
+
+    if (!burstLimit.allowed) {
+      return createRateLimitResponse(burstLimit)
+    }
+
+    const sustainedLimit = await enforceRateLimit(request, {
+      scope: 'print-feedback:sustained',
+      limit: 60,
+      windowMs: 15 * 60 * 1000,
+    })
+
+    if (!sustainedLimit.allowed) {
+      return createRateLimitResponse(sustainedLimit)
+    }
+
     const { snapshot, submittedDate, logoUrl } = await request.json()
 
     // Generate the HTML from the template

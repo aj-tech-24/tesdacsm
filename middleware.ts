@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
+import { applyEdgeRateLimit } from "@/lib/edge-request-protection";
 
 const secretKey = process.env.SESSION_SECRET || "default_super_secret_key_change_me_later";
 const encodedKey = new TextEncoder().encode(secretKey);
@@ -9,6 +10,12 @@ const publicRoutes = ["/admin/login"];
 
 export async function middleware(req: NextRequest) {
     const path = req.nextUrl.pathname;
+
+    const rateLimitResponse = applyEdgeRateLimit(req, path);
+    if (rateLimitResponse) {
+        return rateLimitResponse;
+    }
+
     const isProtectedRoute = protectedRoutes.some((route) => path.startsWith(route));
     const isPublicRoute = publicRoutes.some((route) => path.startsWith(route));
 
@@ -45,5 +52,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-    matcher: ["/admin/:path*"],
+    matcher: ["/admin/:path*", "/api/:path*"],
 };

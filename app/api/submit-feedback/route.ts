@@ -1,9 +1,35 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getServiceCategoryFromExactList, servicesData, type ServiceCategory } from "@/lib/services-data"
+import { createRateLimitResponse, enforceRateLimit, rejectIfRequestTooLarge } from "@/lib/request-protection"
 
 export async function POST(req: Request) {
     try {
+        const oversizedResponse = rejectIfRequestTooLarge(req, 512 * 1024)
+        if (oversizedResponse) {
+            return oversizedResponse
+        }
+
+        const burstLimit = await enforceRateLimit(req, {
+            scope: "submit-feedback:burst",
+            limit: 6,
+            windowMs: 30 * 1000,
+        })
+
+        if (!burstLimit.allowed) {
+            return createRateLimitResponse(burstLimit)
+        }
+
+        const sustainedLimit = await enforceRateLimit(req, {
+            scope: "submit-feedback:sustained",
+            limit: 24,
+            windowMs: 15 * 60 * 1000,
+        })
+
+        if (!sustainedLimit.allowed) {
+            return createRateLimitResponse(sustainedLimit)
+        }
+
         const body = await req.json()
         const { clientInfo, ccQuestions, sqd, suggestions } = body
 

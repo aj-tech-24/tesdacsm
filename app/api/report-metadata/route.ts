@@ -1,9 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/session";
+import { createRateLimitResponse, enforceRateLimit } from "@/lib/request-protection";
 
 export async function GET(req: NextRequest) {
     try {
+        const burstLimit = await enforceRateLimit(req, {
+            scope: "report-metadata:burst",
+            limit: 30,
+            windowMs: 60 * 1000,
+        })
+
+        if (!burstLimit.allowed) {
+            return createRateLimitResponse(burstLimit)
+        }
+
+        const sustainedLimit = await enforceRateLimit(req, {
+            scope: "report-metadata:sustained",
+            limit: 240,
+            windowMs: 15 * 60 * 1000,
+        })
+
+        if (!sustainedLimit.allowed) {
+            return createRateLimitResponse(sustainedLimit)
+        }
+
         const session = await getSession();
         if (!session) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -33,6 +54,26 @@ export async function GET(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
     try {
+        const burstLimit = await enforceRateLimit(req, {
+            scope: "report-metadata:put:burst",
+            limit: 20,
+            windowMs: 60 * 1000,
+        })
+
+        if (!burstLimit.allowed) {
+            return createRateLimitResponse(burstLimit)
+        }
+
+        const sustainedLimit = await enforceRateLimit(req, {
+            scope: "report-metadata:put:sustained",
+            limit: 120,
+            windowMs: 15 * 60 * 1000,
+        })
+
+        if (!sustainedLimit.allowed) {
+            return createRateLimitResponse(sustainedLimit)
+        }
+
         const session = await getSession();
         const canManageMetadata =
             !!session &&
