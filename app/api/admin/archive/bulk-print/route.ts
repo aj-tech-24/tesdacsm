@@ -3,7 +3,7 @@ import { getTursoClient } from "@/lib/turso";
 import { getSession } from "@/lib/session";
 import { buildClientFeedbackPrintHtml } from "@/lib/csm-print-template";
 import puppeteer from "puppeteer-core";
-import chromium from "chrome-aws-lambda";
+import chromium from "@sparticuz/chromium";
 import fs from "fs/promises";
 import path from "path";
 
@@ -120,15 +120,19 @@ export async function handleBulkPrint(req: Request, deps: BulkPrintDependencies 
         // Generate PDF using Puppeteer
         try {
             // Resolve Chromium/Chrome executable. Prefer explicit `CHROME_EXECUTABLE_PATH`,
-            // then try `chrome-aws-lambda` (works in many serverless environments).
+            // then use the Vercel-friendly Sparticuz Chromium binary.
             let execPath = process.env.CHROME_EXECUTABLE_PATH;
             const launchOpts: any = {
-                args: chromium.args || ["--no-sandbox", "--disable-setuid-sandbox"],
-                headless: chromium.headless ?? true,
+                args: chromium.args,
+                defaultViewport: {
+                    width: 1280,
+                    height: 720,
+                },
+                headless: true,
             };
             if (!execPath) {
                 try {
-                    execPath = await chromium.executablePath;
+                    execPath = await chromium.executablePath();
                 } catch (e) {
                     // ignore — we'll try with whatever Puppeteer can do
                 }
