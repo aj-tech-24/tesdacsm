@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { getTursoClient } from "@/lib/turso";
 import { getSession } from "@/lib/session";
 import { buildClientFeedbackPrintHtml } from "@/lib/csm-print-template";
-import puppeteer from "puppeteer";
+import puppeteer from "puppeteer-core";
+import chromium from "chrome-aws-lambda";
 import fs from "fs/promises";
 import path from "path";
 
@@ -115,12 +116,20 @@ export async function handleBulkPrint(req: Request, deps: BulkPrintDependencies 
 
         // Generate PDF using Puppeteer
         try {
-            // Allow overriding the Chromium/Chrome executable via env var `CHROME_EXECUTABLE_PATH`.
-            const execPath = typeof process !== 'undefined' ? process.env.CHROME_EXECUTABLE_PATH : undefined;
+            // Resolve Chromium/Chrome executable. Prefer explicit `CHROME_EXECUTABLE_PATH`,
+            // then try `chrome-aws-lambda` (works in many serverless environments).
+            let execPath = process.env.CHROME_EXECUTABLE_PATH;
             const launchOpts: any = {
-                headless: "new",
-                args: ["--no-sandbox", "--disable-setuid-sandbox"],
+                args: chromium.args || ["--no-sandbox", "--disable-setuid-sandbox"],
+                headless: chromium.headless ?? true,
             };
+            if (!execPath) {
+                try {
+                    execPath = await chromium.executablePath;
+                } catch (e) {
+                    // ignore — we'll try with whatever Puppeteer can do
+                }
+            }
             if (execPath) launchOpts.executablePath = execPath;
 
             const browser = await browserLauncher(launchOpts);
@@ -153,10 +162,19 @@ export async function handleBulkPrint(req: Request, deps: BulkPrintDependencies 
             }
         } catch (err) {
             console.warn("PDF generation failed with Puppeteer:", err);
-            return NextResponse.json(
-                { success: false, error: "Failed to generate PDF for this batch" },
-                { status: 500 }
-            );
+
+            // Fallback: return the HTML so the browser can open and print manually.
+            // This avoids a hard failure for environments where Chromium is not
+            // available (e.g., serverless without a configured binary).
+            return new NextResponse(html, {
+                status: 200,
+                headers: {
+                    "Content-Type": "text/html; charset=utf-8",
+                    "Content-Disposition": `inline`,
+                    "X-PDF-Fallback": "puppeteer-failed",
+                    "Cache-Control": "no-store",
+                },
+            });
         }
     } catch (error: any) {
         console.error("Bulk Print Error:", error);
