@@ -86,14 +86,14 @@ export default function MonthFilter({ children, totalResponses, reportPeriodLabe
         return (
             <div className="flex flex-wrap items-center gap-2 xl:ml-auto">
                 {showStats && typeof totalResponses !== "undefined" && (
-                    <div className="min-w-[116px] rounded-lg border border-slate-200 bg-slate-50/80 px-2.5 py-2">
-                        <p className="text-[11px] uppercase tracking-wide text-slate-500">Total Responses</p>
-                        <p className="mt-1 text-base font-semibold leading-none text-slate-900">{totalResponses}</p>
+                    <div className="min-w-[88px] rounded-lg border border-slate-200 bg-slate-50/80 px-2 py-1.5">
+                        <p className="text-[10px] uppercase tracking-wide text-slate-500">Total Responses</p>
+                        <p className="mt-1 text-sm font-semibold leading-tight text-slate-900">{totalResponses}</p>
                     </div>
                 )}
                 {showStats && reportPeriodLabel && (
-                    <div className="min-w-[140px] rounded-lg border border-slate-200 bg-slate-50/80 px-2.5 py-2">
-                        <p className="text-[11px] uppercase tracking-wide text-slate-500">Report Period</p>
+                    <div className="min-w-[110px] rounded-lg border border-slate-200 bg-slate-50/80 px-2 py-1.5">
+                        <p className="text-[10px] uppercase tracking-wide text-slate-500">Report Period</p>
                         <p className="mt-1 text-xs font-semibold leading-tight text-slate-900">{reportPeriodLabel}</p>
                     </div>
                 )}
@@ -168,14 +168,14 @@ export default function MonthFilter({ children, totalResponses, reportPeriodLabe
 
                 <div className="flex flex-wrap items-center gap-2 xl:ml-auto">
                     {showStats && typeof totalResponses !== "undefined" && (
-                        <div className="min-w-[116px] rounded-lg border border-slate-200 bg-slate-50/80 px-2.5 py-2">
-                            <p className="text-[11px] uppercase tracking-wide text-slate-500">Total Responses</p>
-                            <p className="mt-1 text-base font-semibold leading-none text-slate-900">{totalResponses}</p>
+                        <div className="min-w-[88px] rounded-lg border border-slate-200 bg-slate-50/80 px-2 py-1.5">
+                            <p className="text-[10px] uppercase tracking-wide text-slate-500">Total Responses</p>
+                            <p className="mt-1 text-sm font-semibold leading-tight text-slate-900">{totalResponses}</p>
                         </div>
                     )}
                     {showStats && reportPeriodLabel && (
-                        <div className="min-w-[140px] rounded-lg border border-slate-200 bg-slate-50/80 px-2.5 py-2">
-                            <p className="text-[11px] uppercase tracking-wide text-slate-500">Report Period</p>
+                        <div className="min-w-[110px] rounded-lg border border-slate-200 bg-slate-50/80 px-2 py-1.5">
+                            <p className="text-[10px] uppercase tracking-wide text-slate-500">Report Period</p>
                             <p className="mt-1 text-xs font-semibold leading-tight text-slate-900">{reportPeriodLabel}</p>
                         </div>
                     )}
