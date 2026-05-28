@@ -30,6 +30,8 @@ Recommended setup command:
 corepack enable
 ```
 
+If `pnpm` is not recognized after this, use `corepack pnpm <command>` as fallback.
+
 ---
 
 ## 3) First-time setup (local machine)
@@ -37,7 +39,7 @@ corepack enable
 From the project folder:
 
 ```bash
-corepack pnpm install
+pnpm install
 ```
 
 If you prefer npm:
@@ -55,7 +57,7 @@ This installs dependencies and generates Prisma client automatically.
 ### Start development server
 
 ```bash
-corepack pnpm dev
+pnpm dev
 ```
 
 Open:
@@ -67,13 +69,13 @@ http://localhost:3000
 ### Build for production
 
 ```bash
-corepack pnpm build
+pnpm build
 ```
 
 ### Start production server
 
 ```bash
-corepack pnpm start
+pnpm start
 ```
 
 ---
@@ -83,12 +85,12 @@ corepack pnpm start
 Run these in order:
 
 ```bash
-corepack pnpm test
-corepack pnpm build
+pnpm test
+pnpm build
 ```
 
 Notes:
-- `pnpm test` should ideally pass all tests.
+- `pnpm test` must pass before production deployment.
 - `pnpm build` must complete successfully before production deployment.
 - If build fails due to blocked internet when downloading Google Fonts, retry on a network with normal internet access.
 
@@ -109,7 +111,7 @@ When something is broken, use this process:
 1. Stop server (`Ctrl + C` in terminal).
 2. Start it again:
    ```bash
-   corepack pnpm dev
+   pnpm dev
    ```
 3. Test the same action again.
 
@@ -129,7 +131,7 @@ Copy the full message before doing anything else.
 ### Step D — Run tests to isolate issue
 
 ```bash
-corepack pnpm test
+pnpm test
 ```
 
 - If one test fails, read the failure block.
@@ -145,15 +147,15 @@ Possible causes:
 
 Fix:
 ```bash
-corepack pnpm install
-corepack pnpm dev
+pnpm install
+pnpm dev
 ```
 
 #### 2) Build fails
 
 Run:
 ```bash
-corepack pnpm build
+pnpm build
 ```
 
 Common cause in restricted networks:
@@ -176,7 +178,7 @@ Reference file: `PRODUCTION_SERVER_STEPS.md` (section: Enabling server-side PDF 
 
 Check:
 - username/password correctness,
-- if seed/default users were created,
+- if seed/default users were created (run `pnpm tsx prisma/seed.ts`, then check if login works),
 - session/cookie settings and server time.
 
 #### 5) Slow response or temporary 429 errors
@@ -199,15 +201,18 @@ Reference file: `README_UPSTASH.md`.
 ### Weekly
 - Run:
   ```bash
-  corepack pnpm test
-  corepack pnpm build
+  pnpm test
+  pnpm build
   ```
 - Review recent changes in Git before deployment.
 - Ensure backups/exports are being generated as expected.
 
 ### Monthly
 - Review environment variables and remove unused ones.
-- Update dependencies carefully (in a separate maintenance branch).
+- Update dependencies in a separate maintenance branch:
+  1. `pnpm update`
+  2. Run `pnpm test` and `pnpm build`
+  3. Deploy only if both commands pass
 - Re-test report export and PDF generation.
 
 ---
